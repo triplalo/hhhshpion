@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Шпион Online 🕵️‍♂️</title>
+    <!-- Шрифт -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+    <!-- Магия для онлайна -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #ff4757;
+            --secondary: #2ed573;
+            --dark: #2f3542;
+            --bg: #1e272e;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Nunito', sans-serif;
+            background: var(--bg);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        h1 { margin: 0 0 20px 0; font-size: 2rem; }
+        p { color: #ccc; }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-sizing: border-box;
+            text-transform: uppercase;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-bottom: 10px;
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-create { background: var(--primary); color: white; }
+        .btn-join { background: var(--secondary); color: white; }
+        .btn-role { background: #3742fa; color: white; margin-top: 20px;}
+
+        .screen { display: none; }
+        .active { display: block; }
+
+        /* Лобби */
+        .room-code {
+            font-size: 3rem;
+            letter-spacing: 5px;
+            color: var(--secondary);
+            font-weight: 800;
+            margin: 20px 0;
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .player-list {
+            text-align: left;
+            margin: 20px 0;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 10px;
+            min-height: 100px;
+        }
+        .player-item { padding: 5px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+        /* Игра */
+        .role-hidden {
+            width: 150px; height: 150px;
+            background: #ccc;
+            border-radius: 50%;
+            margin: 0 auto;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; color: #333; cursor: pointer;
+        }
+        .role-img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+            border: 4px solid white;
+        }
+        
+        .blur-content { filter: blur(15px); transition: 0.3s; }
+        .role-revealed .blur-content { filter: blur(0); }
+
+        .spy-alert {
+            color: var(--primary);
+            font-size: 2.5rem;
+            font-weight: 800;
+            border: 5px solid var(--primary);
+            padding: 20px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <!-- ГЛАВНОЕ МЕНЮ -->
+        <div id="screen-menu" class="screen active">
+            <div class="card">
+                <h1>🕵️‍♂️ SPY ONLINE</h1>
+                <input type="text" id="my-name" placeholder="ТВОЕ ИМЯ">
+                <button class="btn btn-create" onclick="createGame()">СОЗДАТЬ ИГРУ</button>
+                <div style="margin: 10px 0; font-size: 0.8rem; opacity: 0.5;">— ИЛИ —</div>
+                <input type="text" id="join-code" placeholder="КОД КОМНАТЫ">
+                <button class="btn btn-join" onclick="joinGame()">ВОЙТИ</button>
+            </div>
+        </div>
+
+        <!-- ЛОББИ (ДЛЯ ХОСТА) -->
+        <div id="screen-host" class="screen">
+            <div class="card">
+                <p>Код комнаты:</p>
+                <div class="room-code" id="display-code">...</div>
+                <p>Игроки:</p>
+                <div class="player-list" id="host-player-list"></div>
+                
+                <p>Настройки:</p>
+                <select id="pack-select" style="width:100%; padding:10px; border-radius:10px; margin-bottom:10px;">
+                    <option value="dota">Dota 2</option>
+                    <option value="clash">Clash Royale</option>
+                    <option value="mix">Микс (Всё вместе)</option>
+                </select>
+
+                <button class="btn btn-create" onclick="hostStartGame()">НАЧАТЬ ИГРУ</button>
+            </div>
+        </div>
+
+        <!-- ЛОББИ (ДЛЯ ИГРОКА) -->
+        <div id="screen-wait" class="screen">
+            <div class="card">
+                <h1>Ждем хоста...</h1>
+                <p>Ты в лобби.</p>
+                <p>Не закрывай страницу.</p>
+                <div style="font-size: 3rem; margin-top:20px;">☕</div>
+            </div>
+        </div>
+
+        <!-- ЭКРАН ИГРЫ (РОЛЬ) -->
+        <div id="screen-game" class="screen">
+            <div class="card">
+                <h2>Твоя роль:</h2>
+                <p style="font-size: 0.8rem;">Нажми и удерживай кнопку, чтобы посмотреть</p>
+                
+                <div id="role-area" style="margin: 20px 0; min-height: 200px; display: flex; align-items: center; justify-content: center;">
+                    <!-- Сюда прилетит роль -->
+                    <div style="font-size: 5rem;">❓</div>
+                </div>
+
+                <button class="btn btn-role" 
+                    onmousedown="reveal(true)" 
+                    onmouseup="reveal(false)" 
+                    ontouchstart="reveal(true)" 
+                    ontouchend="reveal(false)">
+                    ПОКАЗАТЬ
+                </button>
+            </div>
+            <div class="card" style="margin-top: 20px; background: rgba(0,0,0,0.5);">
+                <p>Таймер запустит хост</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // === ДАННЫЕ ===
+        const PACKS = {
+            dota: [
+                { name: "Pudge", img: "pudge.jpg" },
+                { name: "Invoker", img: "invoker.jpg" },
+                { name: "Crystal Maiden", img: "cm.jpg" },
+                { name: "Techies", img: "techies.jpg" },
+                { name: "Roshan", img: "roshan.jpg" },
+                { name: "Sniper", img: "sniper.jpg" },
+                { name: "Axe", img: "axe.jpg" }
+            ],
+            clash: [
+                { name: "Hog Rider", img: "hog.jpg" },
+                { name: "P.E.K.K.A", img: "pekka.jpg" },
+                { name: "Goblin Barrel", img: "goblin.jpg" },
+                { name: "Mega Knight", img: "mk.jpg" },
+                { name: "Princess", img: "princess.jpg" },
+                { name: "Giant", img: "giant.jpg" },
+                { name: "Skeleton", img: "larry.jpg" }
+            ]
+        };
+
+        // === ПЕРЕМЕННЫЕ ===
+        let myPeer = null;
+        let myConn = null; // Для игрока: соединение с хостом
+        let connections = []; // Для хоста: список соединений с игроками
+        let myName = "";
+        let isHost = false;
+        
+        // Префикс для уникальности ID в PeerJS
+        const APP_PREFIX = "spy-game-v1-"; 
+
+        // === ИНИЦИАЛИЗАЦИЯ ===
+        function createGame() {
+            myName = document.getElementById('my-name').value || "Хост";
+            
+            // Генерируем случайный код из 4 символов
+            const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+            
+            initPeer(code, true);
+        }
+
+        function joinGame() {
+            myName = document.getElementById('my-name').value || "Игрок";
+            const code = document.getElementById('join-code').value.toUpperCase();
+            
+            if (code.length < 3) { alert("Введи нормальный код!"); return; }
+            
+            initPeer(null, false, code);
+        }
+
+        function initPeer(code, hostMode, targetCode = null) {
+            // Создаем свой ID. Если хост - то ID фиксированный по коду. Если игрок - случайный.
+            const peerId = hostMode ? (APP_PREFIX + code) : undefined;
+
+            myPeer = new Peer(peerId);
+
+            myPeer.on('open', (id) => {
+                if (hostMode) {
+                    isHost = true;
+                    showScreen('screen-host');
+                    document.getElementById('display-code').innerText = code;
+                    updateHostList();
+                } else {
+                    connectToHost(targetCode);
+                }
+            });
+
+            myPeer.on('connection', (conn) => {
+                if (isHost) {
+                    handleIncomingConnection(conn);
+                }
+            });
+            
+            myPeer.on('error', (err) => {
+                console.error(err);
+                if(err.type === 'unavailable-id') {
+                    alert("Этот код уже занят! Попробуй снова.");
+                    location.reload();
+                } else {
+                    alert("Ошибка соединения. Попробуй еще раз.");
+                }
+            });
+        }
+
+        // === ЛОГИКА ХОСТА ===
+        function handleIncomingConnection(conn) {
+            connections.push(conn);
+            
+            conn.on('open', () => {
+                // Ждем, пока игрок пришлет свое имя
+                conn.on('data', (data) => {
+                    if (data.type === 'join') {
+                        conn.playerName = data.name;
+                        updateHostList();
+                    }
+                });
+            });
+
+            conn.on('close', () => {
+                connections = connections.filter(c => c !== conn);
+                updateHostList();
+            });
+        }
+
+        function updateHostList() {
+            const list = document.getElementById('host-player-list');
+            list.innerHTML = `<div class="player-item">👑 ${myName} (Ты)</div>`;
+            connections.forEach(conn => {
+                const name = conn.playerName || "Подключение...";
+                list.innerHTML += `<div class="player-item">👤 ${name}</div>`;
+            });
+        }
+
+        function hostStartGame() {
+            const totalPlayers = connections.length + 1; // Хост + остальные
+            if (totalPlayers < 3) {
+                alert("Нужно минимум 3 человека!");
+                return;
+            }
+
+            // Выбираем шпиона (0 - хост, 1..N - подключения)
+            const spyIndex = Math.floor(Math.random() * totalPlayers);
+            
+            // Выбираем локацию
+            const packName = document.getElementById('pack-select').value;
+            let pool = [];
+            if (packName === 'mix') pool = [...PACKS.dota, ...PACKS.clash];
+            else pool = PACKS[packName];
+            
+            const location = pool[Math.floor(Math.random() * pool.length)];
+
+            // Рассылаем роли
+            // 1. Сначала себе (Хосту)
+            if (spyIndex === 0) {
+                setMyRole('SPY', null);
+            } else {
+                setMyRole('CITIZEN', location);
+            }
+
+            // 2. Всем остальным
+            connections.forEach((conn, index) => {
+                // index + 1, т.к. 0 это хост
+                const isSpy = (index + 1) === spyIndex;
+                conn.send({
+                    type: 'start',
+                    role: isSpy ? 'SPY' : 'CITIZEN',
+                    location: location
+                });
+            });
+        }
+
+        // === ЛОГИКА ИГРОКА ===
+        function connectToHost(code) {
+            const hostId = APP_PREFIX + code;
+            myConn = myPeer.connect(hostId);
+
+            myConn.on('open', () => {
+                showScreen('screen-wait');
+                // Отправляем свое имя
+                myConn.send({ type: 'join', name: myName });
+            });
+
+            myConn.on('data', (data) => {
+                if (data.type === 'start') {
+                    setMyRole(data.role, data.location);
+                }
+            });
+
+            myConn.on('close', () => {
+                alert("Хост отключился!");
+                location.reload();
+            });
+            
+            // Таймер ожидания (если код неверный, PeerJS иногда тупит)
+            setTimeout(() => {
+                if(!myConn.open) {
+                    alert("Не удалось подключиться. Проверь код!");
+                    location.reload();
+                }
+            }, 5000);
+        }
+
+        // === ОБЩАЯ ЛОГИКА ИГРЫ ===
+        function setMyRole(role, locationData) {
+            showScreen('screen-game');
+            const area = document.getElementById('role-area');
+            
+            if (role === 'SPY') {
+                area.innerHTML = `
+                    <div id="secret-content" style="display:none;">
+                        <div class="spy-alert">ТЫ ШПИОН! 🤫</div>
+                        <p>Не спались!</p>
+                    </div>
+                `;
+            } else {
+                area.innerHTML = `
+                    <div id="secret-content" style="display:none; text-align:center;">
+                        <img src="${locationData.img}" class="role-img" onerror="this.src='https://via.placeholder.com/200?text=Error'">
+                        <h2>${locationData.name}</h2>
+                    </div>
+                `;
+            }
+        }
+
+        function reveal(shouldShow) {
+            const content = document.getElementById('secret-content');
+            if(content) {
+                content.style.display = shouldShow ? 'block' : 'none';
+            }
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
+</body>
+</html>
