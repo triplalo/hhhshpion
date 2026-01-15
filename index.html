@@ -3,637 +3,996 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPY: FINAL v4 🕵️‍♂️</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Fredoka+One&display=swap" rel="stylesheet">
-    <!-- Библиотека PeerJS -->
+    <title>SPY: NEON EDITION</title>
+    
+    <!-- Подключаем шрифты -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <!-- PeerJS для соединения -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- Библиотека для салюта (Пасхалка) -->
+    <!-- Салют для пасхалки -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
+        /* --- CORE VISUALS --- */
         :root {
-            --primary: #ff4757;
-            --secondary: #2ed573;
-            --blue: #3742fa;
-            --dark: #1e272e;
-            --panel: rgba(255, 255, 255, 0.08);
+            --bg-dark: #050510;
+            --primary: #00f2ea;   /* Neon Cyan */
+            --secondary: #ff0050; /* Neon Red */
+            --accent: #7df9ff;
+            --glass: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-dim: #a0a0b0;
+            --font-head: 'Orbitron', sans-serif;
+            --font-body: 'Rajdhani', sans-serif;
         }
 
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
 
         body {
             margin: 0;
-            font-family: 'Nunito', sans-serif;
-            background: var(--dark);
-            color: white;
-            min-height: 100vh;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(0, 242, 234, 0.05) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(255, 0, 80, 0.05) 0%, transparent 20%);
+            color: var(--text-main);
+            font-family: var(--font-body);
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden; 
+            overflow: hidden;
         }
 
-        /* --- UI COMPONENTS --- */
-        .screen { display: none; height: 100vh; flex-direction: column; padding: 15px; }
+        /* --- ANIMATIONS --- */
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 10px var(--primary); }
+            50% { box-shadow: 0 0 25px var(--primary); }
+            100% { box-shadow: 0 0 10px var(--primary); }
+        }
+        @keyframes slide-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- UI ELEMENTS --- */
+        .screen {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            padding: 20px;
+            animation: slide-up 0.4s ease-out;
+            position: relative;
+            z-index: 2;
+        }
         .screen.active { display: flex; }
 
-        .header { text-align: center; margin-bottom: 10px; }
-        h1 { font-family: 'Fredoka One'; margin: 0; color: var(--primary); letter-spacing: 1px; }
+        .logo {
+            text-align: center;
+            font-family: var(--font-head);
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(to right, var(--primary), #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(0, 242, 234, 0.3);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
 
         .card {
-            background: var(--panel);
-            border-radius: 20px;
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
             padding: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
             margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- INPUTS & BUTTONS --- */
+        input, select {
+            width: 100%;
+            padding: 15px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--primary);
+            color: white;
+            font-family: var(--font-head);
+            font-size: 1.1rem;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: 0.3s;
+        }
+        input:focus { box-shadow: 0 0 15px rgba(0,242,234,0.3); }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 8px;
+            font-family: var(--font-head);
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: 0.2s;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+        
+        .btn-primary {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 10px rgba(0,242,234,0.1);
+        }
+        .btn-primary:active { background: var(--primary); color: #000; }
+
+        .btn-action {
+            background: var(--secondary);
+            color: white;
+            box-shadow: 0 0 20px rgba(255,0,80,0.4);
+        }
+        .btn-action:active { transform: scale(0.98); }
+
+        .btn-ready { background: #2ecc71; color: white; }
+        .btn-not-ready { background: #e74c3c; color: white; }
+
+        /* --- LOBBY STYLES --- */
+        .room-code-display {
+            font-family: var(--font-head);
+            font-size: 3.5rem;
+            color: var(--primary);
+            text-align: center;
+            margin: 10px 0;
+            text-shadow: 0 0 15px var(--primary);
+            letter-spacing: 5px;
+        }
+
+        .player-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin: 15px 0;
+            border-top: 1px solid var(--glass-border);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 10px 0;
+        }
+
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.03);
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border-left: 3px solid transparent;
+        }
+        .player-item.is-me { border-left-color: var(--primary); background: rgba(0,242,234,0.05); }
+        .player-item .name { font-size: 1.2rem; font-weight: bold; }
+        .status-badge {
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #333;
+            color: #aaa;
+        }
+        .status-badge.ready { background: #2ecc71; color: #000; font-weight: bold; }
+
+        /* --- CHAT --- */
+        .chat-box {
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            margin-top: auto;
+            border: 1px solid var(--glass-border);
+        }
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.9rem;
+        }
+        .chat-msg { margin-bottom: 6px; }
+        .chat-msg .author { color: var(--primary); font-weight: bold; margin-right: 5px; }
+        .chat-msg .text { color: var(--text-dim); }
+        .chat-controls {
+            display: flex;
+            padding: 5px;
+            border-top: 1px solid var(--glass-border);
+        }
+        .chat-input {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-family: var(--font-body);
+        }
+        .chat-send {
+            background: var(--primary);
+            border: none;
+            width: 40px;
+            color: black;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        /* --- GAME SCREEN --- */
+        .role-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             position: relative;
         }
 
-        .btn {
-            width: 100%; padding: 15px; border-radius: 12px; border: none;
-            font-size: 1.1rem; font-weight: 800; cursor: pointer;
-            transition: transform 0.1s; color: white; margin-bottom: 10px;
-            font-family: 'Nunito', sans-serif;
+        .role-btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: #111;
+            border: 4px solid var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 5rem;
+            color: var(--text-dim);
+            cursor: pointer;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            transition: 0.3s;
+            position: relative;
+            z-index: 10;
         }
-        .btn:active { transform: scale(0.96); }
-        .btn-green { background: var(--secondary); box-shadow: 0 4px 0 #218c53; }
-        .btn-red { background: var(--primary); box-shadow: 0 4px 0 #c0392b; }
-        .btn-blue { background: var(--blue); box-shadow: 0 4px 0 #272ebf; }
-
-        input, select {
-            width: 100%; padding: 12px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.2);
-            background: rgba(0,0,0,0.3); color: white; margin-bottom: 10px; font-size: 1rem;
+        
+        .role-card-revealed {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            background: #1a1a2e;
+            border: 2px solid var(--primary);
+            border-radius: 15px;
+            padding: 20px;
             text-align: center;
+            box-shadow: 0 0 50px rgba(0,242,234,0.3);
+            z-index: 20;
+        }
+        .role-card-revealed.is-spy {
+            border-color: var(--secondary);
+            box-shadow: 0 0 50px rgba(255,0,80,0.3);
         }
 
-        /* --- LOBBY LIST --- */
-        .player-list {
-            flex-grow: 1; overflow-y: auto; margin-bottom: 10px;
-            background: rgba(0,0,0,0.2); border-radius: 15px; padding: 10px;
+        .role-title {
+            font-family: var(--font-head);
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: var(--primary);
         }
-        .player-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 10px; background: rgba(255,255,255,0.05); border-radius: 10px; margin-bottom: 5px;
-        }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; background: #555; }
-        .status-dot.ready { background: var(--secondary); box-shadow: 0 0 10px var(--secondary); }
-
-        /* --- CHAT --- */
-        .chat-container {
-            height: 200px; display: flex; flex-direction: column;
-            background: rgba(0,0,0,0.3); border-radius: 15px; padding: 10px; margin-top: auto;
-        }
-        .chat-messages {
-            flex-grow: 1; overflow-y: auto; margin-bottom: 10px; font-size: 0.9rem; text-align: left;
-        }
-        .chat-msg { margin-bottom: 5px; word-wrap: break-word; }
-        .chat-msg b { color: var(--secondary); }
-        .chat-input-row { display: flex; gap: 5px; }
-
-        /* --- GAME ROLE --- */
-        .role-hidden {
-            width: 180px; height: 180px; background: #333; border-radius: 20px;
-            margin: 20px auto; display: flex; align-items: center; justify-content: center;
-            font-size: 4rem; cursor: pointer; border: 4px dashed #555;
-        }
-        .role-img { width: 100%; height: 100%; object-fit: cover; border-radius: 16px; }
-        .spy-alert { 
-            width: 100%; height: 100%; background: var(--primary); border-radius: 16px;
-            display: flex; align-items: center; justify-content: center; text-align: center;
-            font-weight: 900; font-size: 2rem; padding: 10px; animation: pulse 1s infinite;
-        }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .is-spy .role-title { color: var(--secondary); }
+        
+        .role-desc { font-size: 1.1rem; color: #ccc; }
 
         /* --- VOTING --- */
-        .vote-overlay {
+        .voting-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 100; padding: 20px;
-            display: flex; flex-direction: column; justify-content: center;
+            background: rgba(0,5,16,0.95);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+            padding: 30px;
+            animation: slide-up 0.3s;
         }
+        .vote-header { text-align: center; margin-bottom: 30px; color: var(--secondary); font-size: 2rem; font-family: var(--font-head); }
         .vote-btn {
-            background: #333; color: white; padding: 15px; margin-bottom: 10px;
-            border-radius: 10px; border: 1px solid #555; cursor: pointer; text-align: left;
+            padding: 15px; background: #222; border: 1px solid #444; color: white;
+            margin-bottom: 10px; border-radius: 8px; text-align: left;
+            font-size: 1.2rem; cursor: pointer; display: flex; justify-content: space-between;
         }
-        .vote-btn.voted { background: var(--primary); border-color: var(--primary); }
+        .vote-btn:hover { border-color: var(--secondary); background: #2a111a; }
 
-        /* ПАСХАЛКА */
-        .secret-trigger {
-            position: fixed; bottom: 0; right: 0; width: 40px; height: 40px;
-            z-index: 999; cursor: default;
+        /* --- UTILS --- */
+        .notification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #333; padding: 10px 20px; border-radius: 20px;
+            border: 1px solid var(--text-dim); z-index: 999;
+            display: none; font-size: 0.9rem;
         }
-        .secret-text {
-            position: fixed; bottom: 50px; right: 20px; font-size: 12px;
-            color: rgba(255, 255, 255, 0.5); opacity: 0; transition: opacity 1s;
-            pointer-events: none;
+        .secret-area { position: fixed; bottom: 0; right: 0; width: 50px; height: 50px; z-index: 1000; }
+        .secret-msg {
+            position: fixed; bottom: 60px; right: 20px; 
+            font-family: 'Dancing Script', cursive; 
+            color: #ff69b4; font-size: 1.2rem; 
+            opacity: 0; transition: 1s;
         }
-        .secret-text.visible { opacity: 1; }
 
-        .info-tag { font-size: 0.8rem; color: #aaa; text-align: center; margin-top: 5px; }
-        .version { position: fixed; bottom: 5px; left: 5px; font-size: 0.7rem; color: #444; }
     </style>
 </head>
 <body>
 
-    <div class="version">v4.0 (Fixes + Secret)</div>
+    <div id="notify" class="notification">Сообщение</div>
 
-    <!-- ПАСХАЛКА -->
-    <div class="secret-trigger" onclick="activateSecret()"></div>
-    <div id="secret-text" class="secret-text">Я люблю Соню ❤️</div>
-
-    <!-- 1. MENU -->
-    <div id="screen-menu" class="screen active">
-        <div class="header"><h1>🕵️‍♂️ SPY PRO</h1></div>
-        <div class="card">
-            <label>Твой никнейм:</label>
-            <input type="text" id="my-name" placeholder="Введи имя..." value="">
-            
-            <div style="height: 20px;"></div>
-
-            <button class="btn btn-blue" onclick="createGame()">СОЗДАТЬ ЛОББИ</button>
-            <p style="text-align:center; margin: 10px 0; opacity: 0.5;">- ИЛИ -</p>
-            <input type="text" id="join-code" placeholder="КОД (4 символа)" style="text-align:center; text-transform:uppercase; letter-spacing: 3px; font-weight:bold;">
-            <button class="btn btn-green" onclick="joinGame()">ПРИСОЕДИНИТЬСЯ</button>
-        </div>
+    <!-- 1. LOADING SCREEN -->
+    <div id="screen-loading" class="screen active" style="justify-content:center; align-items:center;">
+        <div class="logo">SPY<br>NEON</div>
+        <p style="color: var(--text-dim)">Initializing Neural Link...</p>
     </div>
 
-    <!-- 2. LOBBY -->
+    <!-- 2. MENU SCREEN -->
+    <div id="screen-menu" class="screen">
+        <div class="logo">SPY</div>
+        <div class="card">
+            <label style="color:var(--primary); font-size:0.9rem; margin-bottom:5px; display:block;">ИДЕНТИФИКАЦИЯ</label>
+            <input type="text" id="inp-nickname" placeholder="Твой никнейм">
+            
+            <div style="margin: 20px 0; border-bottom: 1px solid var(--glass-border);"></div>
+
+            <button class="btn btn-primary" onclick="Game.createLobby()">СОЗДАТЬ СЕТЬ</button>
+            
+            <div style="text-align:center; margin: 15px 0; color: var(--text-dim); font-size:0.8rem;">— ПОДКЛЮЧЕНИЕ К УЗЛУ —</div>
+            
+            <input type="text" id="inp-code" placeholder="КОД КОМНАТЫ" style="letter-spacing: 5px; text-transform:uppercase;">
+            <button class="btn btn-action" onclick="Game.joinLobby()">ВОЙТИ</button>
+        </div>
+        <div style="text-align: center; margin-top: auto; font-size: 0.7rem; color: #444;">v5.0 Stable Protocol</div>
+    </div>
+
+    <!-- 3. LOBBY SCREEN -->
     <div id="screen-lobby" class="screen">
-        <div class="header">
-            <h1 style="font-size:1.5rem;">КОД: <span id="lobby-code" style="color:white; border-bottom: 2px dashed #fff;">????</span></h1>
-        </div>
-        
-        <!-- Host Controls -->
-        <div id="host-controls" class="card" style="display:none;">
-            <label>Шпионов:</label>
-            <select id="spy-count-select" onchange="updateSettings()">
-                <option value="1">1 Шпион</option>
-                <option value="2">2 Шпиона</option>
-                <option value="3">3 Шпиона</option>
-            </select>
-            <label>Набор:</label>
-            <select id="pack-select" onchange="updateSettings()">
-                <option value="mix">Dota + Clash (Mix)</option>
-                <option value="dota">Только Dota 2</option>
-                <option value="clash">Только Clash Royale</option>
-            </select>
+        <div class="card" style="text-align: center; padding: 15px;">
+            <div style="color: var(--text-dim); font-size: 0.8rem;">КОД ДОСТУПА</div>
+            <div class="room-code-display" id="lobby-code-disp">----</div>
         </div>
 
-        <div class="player-list" id="lobby-player-list"></div>
+        <!-- Настройки (только для хоста) -->
+        <div id="host-settings" class="card" style="display:none;">
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label style="font-size:0.7rem; color:var(--text-dim);">ШПИОНЫ</label>
+                    <select id="sel-spies" onchange="Game.updateSettings()" style="margin:0; padding:10px;">
+                        <option value="1">1 Шпион</option>
+                        <option value="2">2 Шпиона</option>
+                        <option value="3">3 Шпиона</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:0.7rem; color:var(--text-dim);">БАЗА ДАННЫХ</label>
+                    <select id="sel-pack" onchange="Game.updateSettings()" style="margin:0; padding:10px;">
+                        <option value="mix">MIX (All)</option>
+                        <option value="dota">DOTA 2</option>
+                        <option value="clash">CLASH</option>
+                        <option value="brawl">BRAWL</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
-        <button class="btn btn-green" id="btn-ready" onclick="toggleReady()">Я ГОТОВ ✅</button>
-        <button class="btn btn-red" id="btn-start" onclick="hostStartGame()" style="display:none;">НАЧАТЬ ИГРУ 🚀</button>
+        <div class="player-list" id="lobby-list"></div>
 
-        <!-- Chat -->
-        <div class="chat-container">
-            <div class="chat-messages" id="lobby-chat"></div>
-            <div class="chat-input-row">
-                <input type="text" id="lobby-chat-input" placeholder="Чат..." style="margin:0; text-align: left;">
-                <button class="btn btn-blue" onclick="sendChat('lobby')" style="width: 60px; margin:0;">➤</button>
+        <button id="btn-ready" class="btn btn-ready" onclick="Game.toggleReady()">ГОТОВ</button>
+        <button id="btn-start" class="btn btn-primary" onclick="Game.hostStart()" style="display:none; border-color:var(--secondary); color:var(--secondary);">ЗАПУСК СИСТЕМЫ</button>
+
+        <div class="chat-box">
+            <div class="chat-history" id="lobby-chat"></div>
+            <div class="chat-controls">
+                <input type="text" class="chat-input" id="lobby-chat-inp" placeholder="Сообщение...">
+                <button class="chat-send" onclick="Game.sendChat('lobby')">></button>
             </div>
         </div>
     </div>
 
-    <!-- 3. GAME -->
+    <!-- 4. GAME SCREEN -->
     <div id="screen-game" class="screen">
-        <div class="header"><h1>В ИГРЕ</h1></div>
-        
-        <div class="card" style="text-align:center;">
-            <p style="margin:0; opacity:0.7;">Удерживай, чтобы увидеть роль:</p>
-            <div id="role-area" class="role-hidden"
-                 onmousedown="reveal(true)" onmouseup="reveal(false)"
-                 ontouchstart="reveal(true)" ontouchend="reveal(false)">
+        <div class="logo" style="font-size: 2rem;">ИГРА</div>
+
+        <div class="role-container">
+            <div class="role-btn" 
+                 onmousedown="Game.reveal(true)" 
+                 onmouseup="Game.reveal(false)"
+                 ontouchstart="Game.reveal(true)" 
+                 ontouchend="Game.reveal(false)">
                 ?
             </div>
-            <div id="role-secret" style="display:none;"></div>
-            <p class="info-tag">Не показывай соседям!</p>
+            
+            <!-- Карточка роли (Скрыта) -->
+            <div id="role-card" class="role-card-revealed">
+                <div id="role-icon" style="font-size: 3rem; margin-bottom: 10px;"></div>
+                <div id="role-name" class="role-title">...</div>
+                <div id="role-desc" class="role-desc">...</div>
+            </div>
+
+            <p style="margin-top: 20px; color: var(--text-dim); text-align: center;">Удерживай кнопку, чтобы увидеть роль.<br>Не показывай другим!</p>
         </div>
 
         <div class="card">
-            <button class="btn btn-red" onclick="callVote()">🚨 ВЫЗВАТЬ ГОЛОСОВАНИЕ (<span id="vote-progress">0</span>)</button>
-            <p class="info-tag">Если >50% нажмут, начнем выбирать шпиона</p>
+            <button class="btn btn-action" onclick="Game.callVote()">ВЫЗВАТЬ ГОЛОСОВАНИЕ</button>
+            <div style="text-align: center; font-size: 0.8rem; color: var(--text-dim);">
+                Голосов: <span id="vote-count" style="color:white; font-weight:bold;">0</span> / <span id="vote-total">0</span>
+            </div>
         </div>
 
-        <!-- Chat -->
-        <div class="chat-container">
-            <div class="chat-messages" id="game-chat"></div>
-            <div class="chat-input-row">
-                <input type="text" id="game-chat-input" placeholder="Обсуждение..." style="margin:0; text-align: left;">
-                <button class="btn btn-blue" onclick="sendChat('game')" style="width: 60px; margin:0;">➤</button>
+        <div class="chat-box" style="height: 150px;">
+            <div class="chat-history" id="game-chat"></div>
+            <div class="chat-controls">
+                <input type="text" class="chat-input" id="game-chat-inp" placeholder="Обсуждение...">
+                <button class="chat-send" onclick="Game.sendChat('game')">></button>
             </div>
         </div>
     </div>
 
-    <!-- 4. VOTING MODAL -->
-    <div id="screen-voting" class="vote-overlay" style="display:none;">
-        <h2 style="text-align:center; color: white;">КТО ШПИОН?</h2>
-        <div id="voting-list"></div>
-        <button class="btn btn-red" onclick="closeVoting()" style="margin-top:20px;">Завершить игру (Хост)</button>
+    <!-- 5. VOTING SCREEN -->
+    <div id="screen-voting" class="voting-overlay">
+        <div class="vote-header">КТО ПРЕДАТЕЛЬ?</div>
+        <div id="vote-list" style="flex-grow:1; overflow-y:auto;"></div>
+        <button class="btn btn-primary" onclick="Game.closeVote()" style="margin-top:20px;">ОТМЕНА / ВЕРНУТЬСЯ</button>
+        <button id="btn-end-game" class="btn btn-action" onclick="Game.endGame()" style="display:none;">ЗАВЕРШИТЬ ИГРУ</button>
     </div>
 
-    <!-- SOUNDS -->
-    <audio id="snd-start" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
+    <!-- ПАСХАЛКА -->
+    <div class="secret-area" onclick="activateSecret()"></div>
+    <div id="secret-msg" class="secret-msg">Я люблю Соню ❤️</div>
 
     <script>
-        // ================= DATA =================
-        const PACKS = {
+        /* 
+           ================================================================
+           DATA CORE: CHARACTERS (NO IMAGES, TEXT ONLY)
+           ================================================================
+        */
+        const DB = {
             dota: [
-                "Pudge", "Invoker", "Juggernaut", "Crystal Maiden", "Techies", "Sniper", "Axe", "Shadow Fiend", 
-                "Anti-Mage", "Lion", "Witch Doctor", "Mirana", "Windranger", "Earthshaker", "Sven", "Zeus",
-                "Faceless Void", "Phantom Assassin", "Riki", "Drow Ranger", "Lina", "Tidehunter", "Enigma",
-                "Roshan", "Shopkeeper", "Meepo", "Rubick", "Tiny", "Kunkka", "Slark"
+                "Pudge", "Invoker", "Juggernaut", "CM", "Techies", "Sniper", "Axe", "SF", "Anti-Mage", 
+                "Lion", "Mirana", "Windranger", "Earthshaker", "Sven", "Zeus", "Void", "PA", "Riki", 
+                "Drow Ranger", "Lina", "Tidehunter", "Enigma", "Roshan", "Meepo", "Rubick", "Tiny", "Kunkka"
             ],
             clash: [
                 "P.E.K.K.A", "Hog Rider", "Mega Knight", "Golem", "Giant", "Miner", "Princess", "Wizard",
                 "Valkyrie", "Musketeer", "Baby Dragon", "Prince", "Skeleton Army", "Goblin Barrel", "Balloon",
-                "X-Bow", "Inferno Tower", "Sparky", "Lava Hound", "Electro Wizard", "Ice Wizard", "Bandit",
-                "Royal Giant", "Elite Barbarians", "Knight", "Archers", "Minions", "Clash King"
+                "X-Bow", "Inferno Tower", "Sparky", "Lava Hound", "Electro Wizard", "Ice Wizard", "Bandit"
+            ],
+            brawl: [
+                "Shelly", "Colt", "El Primo", "Poco", "Rosa", "Rico", "Darryl", "Penny", "Piper", "Pam", 
+                "Frank", "Mortis", "Tara", "Gene", "Spike", "Crow", "Leon", "Sandy", "Amber", "Meg"
             ]
         };
 
-        // ================= STATE =================
-        const APP_ID = "spy-fix-v4-"; // Новый ID для сброса кэша
-        
-        let peer, conn;
-        let myId, hostId;
-        let isHost = false;
-        let myName = "";
-        
-        // Храним активные соединения для Хоста, чтобы чат работал
-        let hostConnections = []; 
+        /* 
+           ================================================================
+           GAME ENGINE
+           ================================================================
+        */
+        const Game = {
+            peer: null,
+            conn: null,
+            myId: null,
+            myName: '',
+            isHost: false,
+            roomCode: '',
+            hostConnections: [], // Только для хоста
+            
+            // STATE (Синхронизируется)
+            state: {
+                phase: 'menu', // menu, lobby, game, voting
+                players: [],   // { id, name, ready, role, isSpy, voteCall }
+                chat: [],
+                settings: { spies: 1, pack: 'mix' },
+                voteTrigger: 0
+            },
 
-        let state = {
-            roomCode: "----", // Код теперь в общем стейте, чтобы видели все
-            phase: 'lobby', 
-            players: [], 
-            chat: [],
-            settings: { spies: 1, pack: 'mix' },
-            voteTrigger: 0
+            // --- INIT ---
+            init: function() {
+                document.getElementById('screen-loading').classList.remove('active');
+                this.showScreen('screen-menu');
+            },
+
+            showScreen: function(id) {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+                
+                // Скролл вниз чата при смене экрана
+                if(id === 'screen-lobby') this.renderChat('lobby');
+                if(id === 'screen-game') this.renderChat('game');
+            },
+
+            notify: function(msg) {
+                const n = document.getElementById('notify');
+                n.innerText = msg;
+                n.style.display = 'block';
+                setTimeout(() => n.style.display = 'none', 3000);
+            },
+
+            // --- PEERJS SETUP ---
+            setupPeer: function(hostMode, inputCode = null) {
+                // Генерация ID с временной меткой, чтобы избежать конфликтов
+                const timestamp = Date.now().toString().slice(-5);
+                
+                if (hostMode) {
+                    this.roomCode = this.generateCode();
+                    this.myId = `spy-host-${this.roomCode}-${timestamp}`;
+                    this.isHost = true;
+                } else {
+                    this.roomCode = inputCode;
+                    this.myId = `spy-client-${timestamp}-${Math.random().toString(36).substr(2,4)}`;
+                    this.isHost = false;
+                }
+
+                this.myName = document.getElementById('inp-nickname').value.trim() || (this.isHost ? "ADMIN" : "USER");
+
+                // Создание Peer
+                this.peer = new Peer(this.myId);
+
+                this.peer.on('open', (id) => {
+                    console.log('My ID:', id);
+                    if (this.isHost) {
+                        this.onHostReady();
+                    } else {
+                        this.connectToHost();
+                    }
+                });
+
+                this.peer.on('error', (err) => {
+                    console.error(err);
+                    alert("Ошибка сети: " + err.type);
+                    location.reload();
+                });
+
+                // Если мы хост - слушаем входящие
+                if (this.isHost) {
+                    this.peer.on('connection', (conn) => {
+                        this.hostConnections.push(conn);
+                        
+                        conn.on('data', (data) => this.handleDataHost(data, conn));
+                        conn.on('close', () => {
+                            this.hostConnections = this.hostConnections.filter(c => c !== conn);
+                            this.removePlayer(conn.peer);
+                        });
+                        
+                        // При подключении сразу кидаем стейт
+                        conn.on('open', () => {
+                             conn.send({ type: 'SYNC', state: this.state });
+                        });
+                    });
+                }
+            },
+
+            // --- HOST LOGIC ---
+            onHostReady: function() {
+                // Инициализация стейта
+                this.state.phase = 'lobby';
+                this.state.players = [{ 
+                    id: this.myId, 
+                    name: this.myName, 
+                    ready: true, // Хост всегда готов
+                    voteCall: false 
+                }];
+                
+                this.showScreen('screen-lobby');
+                this.renderLobby();
+            },
+
+            handleDataHost: function(data, conn) {
+                let needBroadcast = false;
+
+                if (data.type === 'JOIN') {
+                    // Новый игрок
+                    // conn.peer - это ID пира
+                    const existing = this.state.players.find(p => p.id === data.id);
+                    if (!existing) {
+                        this.state.players.push({
+                            id: data.id,
+                            name: data.name,
+                            ready: false,
+                            voteCall: false
+                        });
+                        needBroadcast = true;
+                        this.notify(`${data.name} подключился`);
+                    }
+                }
+                else if (data.type === 'ACTION') {
+                    const p = this.state.players.find(p => p.id === data.id);
+                    if (p) {
+                        if (data.action === 'toggleReady') p.ready = !p.ready;
+                        if (data.action === 'callVote') {
+                            p.voteCall = !p.voteCall;
+                            this.checkVoteTrigger();
+                        }
+                        needBroadcast = true;
+                    }
+                }
+                else if (data.type === 'CHAT') {
+                    this.addChatMsg(data.name, data.text);
+                    needBroadcast = true;
+                }
+
+                if (needBroadcast) this.broadcastState();
+            },
+
+            broadcastState: function() {
+                // Обновляем себя
+                this.renderApp();
+                
+                // Рассылаем всем
+                this.hostConnections.forEach(c => {
+                    if (c.open) {
+                        c.send({ type: 'SYNC', state: this.state });
+                    }
+                });
+            },
+
+            // --- CLIENT LOGIC ---
+            connectToHost: function() {
+                // Пытаемся найти ID хоста. Но ID хоста содержит timestamp, который мы не знаем.
+                // ПРОБЛЕМА PEERJS: Мы не можем подключиться, не зная точный ID.
+                // РЕШЕНИЕ: В этой версии я сделал финт. Хост должен иметь предсказуемый ID для соединения?
+                // Нет, PeerJS не позволяет переиспользовать ID быстро.
+                // ПОЭТОМУ: Мы используем механизм частичного перебора или...
+                // СТОП. В предыдущих версиях работало, потому что ID был фиксирован.
+                // Чтобы лобби работало СТАБИЛЬНО, вернемся к "кодовому" ID, но добавим префикс версии.
+                
+                // РЕАЛИЗАЦИЯ ПОДКЛЮЧЕНИЯ:
+                // Мы будем искать хоста по ID: `spy-host-${CODE}-stable`
+                // (Хост при создании должен использовать этот формат).
+                
+                // ВАЖНО: Хост пересоздает Peer.
+            },
+
+            // ПЕРЕПИСЫВАЕМ GENERATE ID для стабильности
+            // Хост создает ID: spy-host-ABCD-v5
+            // Клиент коннектится к: spy-host-ABCD-v5
+            
+            // --- ПЕРЕЗАПИСЬ ФУНКЦИЙ ID ---
+            createLobby: function() {
+                const code = this.generateCode();
+                this.roomCode = code;
+                this.myId = `spy-host-${code}-v5`; // Фиксированный суффикс версии
+                this.isHost = true;
+                this.myName = document.getElementById('inp-nickname').value.trim() || "ADMIN";
+                
+                this.startPeerSession();
+            },
+
+            joinLobby: function() {
+                const code = document.getElementById('inp-code').value.trim().toUpperCase();
+                if(code.length !== 4) return alert("Код должен быть 4 символа");
+                this.roomCode = code;
+                
+                // Генерируем случайный ID для клиента
+                this.myId = `spy-client-${Date.now()}`;
+                this.isHost = false;
+                this.myName = document.getElementById('inp-nickname').value.trim() || "USER";
+
+                this.startPeerSession();
+            },
+
+            startPeerSession: function() {
+                if (this.peer) this.peer.destroy();
+                
+                this.peer = new Peer(this.myId);
+
+                this.peer.on('open', (id) => {
+                    if(this.isHost) {
+                        this.onHostReady();
+                    } else {
+                        // Подключаемся к хосту
+                        const targetId = `spy-host-${this.roomCode}-v5`;
+                        console.log("Connecting to:", targetId);
+                        this.conn = this.peer.connect(targetId);
+                        
+                        this.conn.on('open', () => {
+                            console.log("Connected!");
+                            this.conn.send({ type: 'JOIN', id: this.myId, name: this.myName });
+                        });
+                        
+                        this.conn.on('data', (data) => {
+                            if(data.type === 'SYNC') {
+                                this.state = data.state;
+                                this.renderApp();
+                            }
+                        });
+
+                        this.conn.on('close', () => {
+                            alert("Хост отключился.");
+                            location.reload();
+                        });
+                        
+                        // Таймаут
+                        setTimeout(() => {
+                            if(!this.conn.open) {
+                                // alert("Не удалось подключиться. Проверь код.");
+                            }
+                        }, 5000);
+                    }
+                });
+
+                this.peer.on('error', err => {
+                    console.log(err);
+                    if(err.type === 'peer-unavailable') alert("Лобби не найдено!");
+                    else alert("Ошибка: " + err.type);
+                });
+                
+                // Host Listener moved up
+                if(this.isHost) {
+                    this.peer.on('connection', (conn) => {
+                        this.hostConnections.push(conn);
+                        conn.on('data', (data) => this.handleDataHost(data, conn));
+                        conn.on('close', () => {
+                            this.hostConnections = this.hostConnections.filter(c => c !== conn);
+                            this.removePlayer(conn.peer);
+                        });
+                        conn.on('open', () => conn.send({ type: 'SYNC', state: this.state }));
+                    });
+                }
+            },
+
+            // --- GAME LOGIC ---
+            removePlayer: function(id) {
+                this.state.players = this.state.players.filter(p => p.id !== id);
+                this.broadcastState();
+            },
+
+            updateSettings: function() {
+                if(!this.isHost) return;
+                this.state.settings.spies = parseInt(document.getElementById('sel-spies').value);
+                this.state.settings.pack = document.getElementById('sel-pack').value;
+                this.broadcastState();
+            },
+
+            toggleReady: function() {
+                if(this.isHost) return; // Хост всегда готов
+                this.conn.send({ type: 'ACTION', id: this.myId, action: 'toggleReady' });
+            },
+
+            sendChat: function(ctx) {
+                const inp = document.getElementById(ctx + '-chat-inp');
+                const text = inp.value.trim();
+                if(!text) return;
+                
+                if(this.isHost) {
+                    this.addChatMsg(this.myName, text);
+                    this.broadcastState();
+                } else {
+                    this.conn.send({ type: 'CHAT', name: this.myName, text: text });
+                }
+                inp.value = "";
+            },
+
+            addChatMsg: function(name, text) {
+                this.state.chat.push({ name, text });
+                if(this.state.chat.length > 50) this.state.chat.shift();
+            },
+
+            hostStart: function() {
+                if(this.state.players.length < 3) return alert("Нужно минимум 3 игрока!");
+                
+                // Логика распределения ролей
+                let indices = this.state.players.map((_, i) => i);
+                // Shuffle
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+
+                // Выбор пака
+                let pool = [];
+                const pack = this.state.settings.pack;
+                if(pack === 'mix') pool = [...DB.dota, ...DB.clash, ...DB.brawl];
+                else pool = DB[pack];
+                
+                const location = pool[Math.floor(Math.random() * pool.length)];
+                const spyCount = this.state.settings.spies;
+
+                this.state.players.forEach((p, idx) => {
+                    const isSpy = indices.indexOf(idx) < spyCount;
+                    p.isSpy = isSpy;
+                    p.location = location;
+                    p.voteCall = false;
+                });
+
+                this.state.phase = 'game';
+                this.state.voteTrigger = 0;
+                this.state.chat = []; // Очистка чата
+                this.addChatMsg("СИСТЕМА", `Игра началась! Шпионов: ${spyCount}`);
+                
+                this.broadcastState();
+            },
+
+            callVote: function() {
+                if(this.isHost) {
+                    const p = this.state.players.find(p => p.id === this.myId);
+                    p.voteCall = !p.voteCall;
+                    this.checkVoteTrigger();
+                    this.broadcastState();
+                } else {
+                    this.conn.send({ type: 'ACTION', id: this.myId, action: 'callVote' });
+                }
+            },
+
+            checkVoteTrigger: function() {
+                const votes = this.state.players.filter(p => p.voteCall).length;
+                this.state.voteTrigger = votes;
+                if(votes > this.state.players.length / 2) {
+                    this.state.phase = 'voting';
+                    this.addChatMsg("СИСТЕМА", "Внимание! Началось голосование!");
+                }
+            },
+
+            endGame: function() {
+                this.state.phase = 'lobby';
+                this.state.players.forEach(p => {
+                    p.ready = (p.id === this.myId && this.isHost); 
+                    p.voteCall = false;
+                });
+                this.broadcastState();
+            },
+            
+            closeVote: function() {
+                if(!this.isHost) return;
+                // Отмена голосования (возврат в игру)
+                this.state.phase = 'game';
+                this.state.players.forEach(p => p.voteCall = false);
+                this.state.voteTrigger = 0;
+                this.broadcastState();
+            },
+
+            // --- RENDERING ---
+            renderApp: function() {
+                if(this.state.phase === 'lobby') {
+                    this.showScreen('screen-lobby');
+                    this.renderLobby();
+                    this.renderChat('lobby');
+                } 
+                else if(this.state.phase === 'game') {
+                    this.showScreen('screen-game');
+                    this.renderGame();
+                    this.renderChat('game');
+                    document.getElementById('screen-voting').style.display = 'none';
+                }
+                else if(this.state.phase === 'voting') {
+                    this.showScreen('screen-game');
+                    document.getElementById('screen-voting').style.display = 'flex';
+                    this.renderVoting();
+                }
+            },
+
+            renderLobby: function() {
+                document.getElementById('lobby-code-disp').innerText = this.roomCode;
+                const list = document.getElementById('lobby-list');
+                list.innerHTML = '';
+
+                this.state.players.forEach(p => {
+                    const el = document.createElement('div');
+                    el.className = 'player-item' + (p.id === this.myId ? ' is-me' : '');
+                    el.innerHTML = `
+                        <span class="name">${p.name}</span>
+                        <span class="status-badge ${p.ready ? 'ready' : ''}">${p.ready ? 'ГОТОВ' : 'ЖДЕТ'}</span>
+                    `;
+                    list.appendChild(el);
+                });
+
+                if(this.isHost) {
+                    document.getElementById('host-settings').style.display = 'block';
+                    document.getElementById('btn-start').style.display = 'block';
+                    document.getElementById('btn-ready').style.display = 'none';
+                } else {
+                    document.getElementById('host-settings').style.display = 'none';
+                    document.getElementById('btn-start').style.display = 'none';
+                    const btnR = document.getElementById('btn-ready');
+                    btnR.style.display = 'block';
+                    const me = this.state.players.find(p => p.id === this.myId);
+                    if(me && me.ready) {
+                        btnR.innerText = "НЕ ГОТОВ";
+                        btnR.className = "btn btn-not-ready";
+                    } else {
+                        btnR.innerText = "ГОТОВ";
+                        btnR.className = "btn btn-ready";
+                    }
+                }
+            },
+
+            renderChat: function(ctx) {
+                const box = document.getElementById(ctx + '-chat');
+                box.innerHTML = '';
+                this.state.chat.forEach(msg => {
+                    const d = document.createElement('div');
+                    d.className = 'chat-msg';
+                    d.innerHTML = `<span class="author">${msg.name}:</span><span class="text">${msg.text}</span>`;
+                    box.appendChild(d);
+                });
+                box.scrollTop = box.scrollHeight;
+            },
+
+            renderGame: function() {
+                // Голосование
+                document.getElementById('vote-count').innerText = this.state.voteTrigger;
+                document.getElementById('vote-total').innerText = Math.ceil(this.state.players.length/2 + 0.1);
+
+                // Роль
+                const me = this.state.players.find(p => p.id === this.myId);
+                const card = document.getElementById('role-card');
+                const icon = document.getElementById('role-icon');
+                const name = document.getElementById('role-name');
+                const desc = document.getElementById('role-desc');
+
+                if (me.isSpy) {
+                    card.className = "role-card-revealed is-spy";
+                    icon.innerText = "🕵️‍♂️";
+                    name.innerText = "ШПИОН";
+                    desc.innerText = "Твоя цель: не выдать себя и угадать персонажа";
+                } else {
+                    card.className = "role-card-revealed";
+                    icon.innerText = "🛡️";
+                    name.innerText = me.location;
+                    desc.innerText = "Ты мирный. Вычисли шпиона!";
+                }
+            },
+
+            renderVoting: function() {
+                const list = document.getElementById('vote-list');
+                list.innerHTML = '';
+                
+                this.state.players.forEach(p => {
+                    const btn = document.createElement('div');
+                    btn.className = 'vote-btn';
+                    btn.innerText = p.name;
+                    btn.onclick = () => {
+                        // Вскрытие (только визуал)
+                        if(this.isHost) {
+                            alert(`${p.name} — ${p.isSpy ? 'ШПИОН! ПОБЕДА МИРНЫХ!' : 'МИРНЫЙ... ОШИБКА.'}`);
+                        } else {
+                            alert("Назови свой голос вслух!");
+                        }
+                    };
+                    list.appendChild(btn);
+                });
+
+                if(this.isHost) document.getElementById('btn-end-game').style.display = 'block';
+                else document.getElementById('btn-end-game').style.display = 'none';
+            },
+
+            reveal: function(show) {
+                const card = document.getElementById('role-card');
+                card.style.display = show ? 'block' : 'none';
+            },
+
+            generateCode: function() {
+                const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                let res = "";
+                for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
+                return res;
+            }
         };
 
-        // ================= INIT =================
-        function createGame() {
-            initPeer(true);
-        }
-
-        function joinGame() {
-            const code = document.getElementById('join-code').value.trim().toUpperCase();
-            if(code.length !== 4) return alert("Код должен быть 4 символа!");
-            initPeer(false, code);
-        }
-
-        function initPeer(hostMode, code = null) {
-            myName = document.getElementById('my-name').value.trim() || (hostMode ? "Хост" : "Игрок");
-            
-            const roomCode = hostMode ? generateCode() : code;
-
-            // Если хост, сразу пишем код в стейт
-            if (hostMode) state.roomCode = roomCode;
-
-            myId = APP_ID + roomCode + (hostMode ? "-host" : "-" + Math.random().toString(36).substr(2, 5));
-            hostId = APP_ID + roomCode + "-host";
-
-            peer = new Peer(myId);
-
-            peer.on('open', (id) => {
-                if(hostMode) {
-                    isHost = true;
-                    state.players.push({ id: myId, name: myName, ready: false, voteCall: false });
-                    
-                    document.getElementById('host-controls').style.display = 'block';
-                    document.getElementById('btn-start').style.display = 'block';
-                    showScreen('screen-lobby');
-                    renderLobby();
-                } else {
-                    connectToHost();
-                }
-            });
-
-            if(hostMode) {
-                peer.on('connection', (c) => {
-                    // Добавляем соединение в массив хоста
-                    hostConnections.push(c);
-                    
-                    c.on('data', (data) => handleDataHost(data, c.peer));
-                    c.on('close', () => {
-                        hostConnections = hostConnections.filter(conn => conn !== c);
-                        removePlayer(c.peer);
-                    });
-                    
-                    // Сразу отправляем стейт новому игроку
-                    c.on('open', () => {
-                        c.send({ type: 'state', state: state });
-                    });
-                });
-            }
-
-            peer.on('error', err => {
-                if(err.type === 'peer-unavailable') {
-                    alert("Комната не найдена! Проверь код.");
-                } else {
-                    alert("Ошибка: " + err.type);
-                }
-            });
-        }
-
-        function connectToHost() {
-            conn = peer.connect(hostId);
-            conn.on('open', () => {
-                conn.send({ type: 'join', name: myName });
-                showScreen('screen-lobby');
-            });
-            conn.on('data', (data) => handleDataClient(data));
-            conn.on('close', () => { alert("Хост вышел!"); location.reload(); });
-        }
-
-        function generateCode() {
-            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-            let result = "";
-            for(let i=0; i<4; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
-            return result;
-        }
-
-        // ================= LOGIC: HOST =================
-        function handleDataHost(data, peerId) {
-            let changed = false;
-
-            if(data.type === 'join') {
-                if(!state.players.find(p => p.id === peerId)) {
-                    state.players.push({ id: peerId, name: data.name, ready: false, voteCall: false });
-                    changed = true;
-                }
-            }
-            if(data.type === 'ready') {
-                const p = state.players.find(p => p.id === peerId);
-                if(p) { p.ready = data.value; changed = true; }
-            }
-            if(data.type === 'chat') {
-                state.chat.push({ name: data.name, text: data.text });
-                if(state.chat.length > 50) state.chat.shift();
-                changed = true;
-            }
-            if(data.type === 'call_vote') {
-                const p = state.players.find(p => p.id === peerId);
-                if(p) { p.voteCall = !p.voteCall; changed = true; }
-                checkVoteTrigger();
-            }
-
-            if(changed) broadcastState();
-        }
-
-        function updateSettings() {
-            if(!isHost) return;
-            state.settings.spies = parseInt(document.getElementById('spy-count-select').value);
-            state.settings.pack = document.getElementById('pack-select').value;
-            broadcastState();
-        }
-
-        function removePlayer(id) {
-            state.players = state.players.filter(p => p.id !== id);
-            broadcastState();
-        }
-
-        function broadcastState() {
-            // Обновляем себя (Хоста)
-            handleDataClient({ type: 'state', state: state });
-            
-            // Рассылаем всем через сохраненные соединения
-            hostConnections.forEach(c => {
-                if(c.open) {
-                    c.send({ type: 'state', state: state });
-                }
-            });
-        }
-
-        function hostStartGame() {
-            if(state.players.length < 3) return alert("Нужно минимум 3 игрока!");
-            
-            let indices = state.players.map((_, i) => i);
-            for (let i = indices.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [indices[i], indices[j]] = [indices[j], indices[i]];
-            }
-
-            let pool = [];
-            if(state.settings.pack === 'mix') pool = [...PACKS.dota, ...PACKS.clash];
-            else pool = PACKS[state.settings.pack];
-            const loc = pool[Math.floor(Math.random() * pool.length)];
-
-            const spyCount = state.settings.spies;
-            state.players.forEach((p, index) => {
-                const isSpy = indices.indexOf(index) < spyCount;
-                p.isSpy = isSpy;
-                p.role = isSpy ? "SPY" : "CITIZEN";
-                p.location = loc;
-                p.voteCall = false; 
-            });
-
-            state.phase = 'game';
-            state.voteTrigger = 0;
-            state.chat = []; 
-            state.chat.push({ name: "СИСТЕМА", text: "Игра началась! Шпионов: " + spyCount });
-            
-            document.getElementById('snd-start').play();
-            broadcastState();
-        }
-
-        function checkVoteTrigger() {
-            const votes = state.players.filter(p => p.voteCall).length;
-            state.voteTrigger = votes;
-            if(votes > state.players.length / 2) {
-                state.phase = 'voting';
-                state.chat.push({ name: "СИСТЕМА", text: "ГОЛОСОВАНИЕ НАЧАЛОСЬ!" });
-            }
-        }
-
-        // ================= LOGIC: CLIENT =================
-        function handleDataClient(data) {
-            if(data.type === 'state') {
-                state = data.state;
-                renderApp();
-            }
-        }
-
-        function sendChat(context) {
-            const inputId = context === 'lobby' ? 'lobby-chat-input' : 'game-chat-input';
-            const input = document.getElementById(inputId);
-            const text = input.value.trim();
-            if(!text) return;
-
-            const msg = { type: 'chat', name: myName, text: text };
-            
-            if(isHost) {
-                handleDataHost(msg, myId);
-            } else {
-                conn.send(msg);
-            }
-            input.value = "";
-        }
-
-        function toggleReady() {
-            const me = state.players.find(p => p.id === myId);
-            const newVal = !me.ready;
-            if(isHost) {
-                me.ready = newVal;
-                broadcastState();
-            } else {
-                conn.send({ type: 'ready', value: newVal });
-            }
-        }
-
-        function callVote() {
-            if(isHost) {
-                handleDataHost({ type: 'call_vote' }, myId);
-            } else {
-                conn.send({ type: 'call_vote' });
-            }
-        }
-
-        // ================= RENDER =================
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-
-        function renderApp() {
-            if(state.phase === 'lobby') {
-                showScreen('screen-lobby');
-                renderLobby();
-                renderChat('lobby');
-            } else if(state.phase === 'game') {
-                showScreen('screen-game');
-                renderGame();
-                renderChat('game');
-                document.getElementById('screen-voting').style.display = 'none';
-            } else if(state.phase === 'voting') {
-                showScreen('screen-game'); 
-                renderVoting();
-            }
-        }
-
-        function renderLobby() {
-            const list = document.getElementById('lobby-player-list');
-            list.innerHTML = "";
-            
-            // ТЕПЕРЬ КОД БЕРЕТСЯ ИЗ ОБЩЕГО СТЕЙТА
-            document.getElementById('lobby-code').innerText = state.roomCode;
-
-            state.players.forEach(p => {
-                const div = document.createElement('div');
-                div.className = 'player-item';
-                div.innerHTML = `
-                    <span>${p.name} ${p.id === myId ? '(Вы)' : ''}</span>
-                    <div class="status-dot ${p.ready ? 'ready' : ''}"></div>
-                `;
-                list.appendChild(div);
-            });
-
-            const me = state.players.find(p => p.id === myId);
-            const btn = document.getElementById('btn-ready');
-            if(me && me.ready) {
-                btn.innerText = "Я НЕ ГОТОВ ❌";
-                btn.className = "btn btn-red";
-            } else {
-                btn.innerText = "Я ГОТОВ ✅";
-                btn.className = "btn btn-green";
-            }
-        }
-
-        function renderChat(ctx) {
-            const container = document.getElementById(ctx + '-chat');
-            container.innerHTML = "";
-            state.chat.forEach(msg => {
-                const d = document.createElement('div');
-                d.className = 'chat-msg';
-                d.innerHTML = `<b>${msg.name}:</b> ${msg.text}`;
-                container.appendChild(d);
-            });
-            container.scrollTop = container.scrollHeight;
-        }
-
-        function renderGame() {
-            const me = state.players.find(p => p.id === myId);
-            if(!me) return;
-
-            document.getElementById('vote-progress').innerText = `${state.voteTrigger}/${Math.ceil(state.players.length/2 + 0.1)}`;
-
-            const secret = document.getElementById('role-secret');
-            if(me.isSpy) {
-                secret.innerHTML = `<div class="spy-alert">ТЫ ШПИОН!<br>🤫</div>`;
-            } else {
-                const imgName = me.location.toLowerCase().replace(/[\s\.]/g, '') + ".jpg";
-                secret.innerHTML = `
-                    <div style="text-align:center; height:100%;">
-                        <img src="${imgName}" class="role-img" onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${me.location}&background=random&size=150'">
-                        <h3 style="margin:5px 0;">${me.location}</h3>
-                    </div>
-                `;
-            }
-        }
-
-        function reveal(show) {
-            const area = document.getElementById('role-area');
-            const secret = document.getElementById('role-secret');
-            if(show) {
-                area.style.display = 'none';
-                secret.style.display = 'block';
-            } else {
-                area.style.display = 'flex';
-                secret.style.display = 'none';
-            }
-        }
-
-        function renderVoting() {
-            const modal = document.getElementById('screen-voting');
-            modal.style.display = 'flex';
-            const list = document.getElementById('voting-list');
-            list.innerHTML = "";
-            
-            state.players.forEach(p => {
-                const btn = document.createElement('div');
-                btn.className = 'vote-btn';
-                btn.innerHTML = `${p.name}`;
-                btn.onclick = () => {
-                   if(isHost) {
-                        alert(`${p.name} - ${p.isSpy ? 'ШПИОН! 🔫' : 'Мирный житель'}`);
-                   } else {
-                        alert("Скажи вслух свой выбор!");
-                   }
-                };
-                list.appendChild(btn);
-            });
-        }
-        
-        function closeVoting() {
-            if(!isHost) return;
-            if(confirm("Закончить игру?")) {
-                state.phase = 'lobby';
-                state.players.forEach(p => { p.ready = false; p.voteCall = false; });
-                broadcastState();
-            } else {
-                state.phase = 'game';
-                state.voteTrigger = 0;
-                state.players.forEach(p => p.voteCall = false);
-                broadcastState();
-            }
-        }
-
-        // --- ПАСХАЛКА ---
+        // --- EASTER EGG ---
         function activateSecret() {
-            const text = document.getElementById('secret-text');
-            text.classList.add('visible');
-            triggerConfetti();
-            setTimeout(() => text.classList.remove('visible'), 5000);
+            const msg = document.getElementById('secret-msg');
+            msg.style.opacity = '1';
+            
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            setTimeout(() => msg.style.opacity = '0', 3000);
         }
 
-        function triggerConfetti() {
-            const duration = 2000;
-            const end = Date.now() + duration;
-            (function frame() {
-                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ff4757', '#2ed573', '#3742fa'] });
-                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ff4757', '#2ed573', '#3742fa'] });
-                if (Date.now() < end) requestAnimationFrame(frame);
-            }());
-        }
+        // Start
+        setTimeout(() => Game.init(), 1000);
+
     </script>
 </body>
 </html>
