@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPY: FINAL 🕵️‍♂️</title>
+    <title>SPY: FINAL v4 🕵️‍♂️</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Fredoka+One&display=swap" rel="stylesheet">
+    <!-- Библиотека PeerJS -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- Библиотека для салюта (Пасхалка) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
@@ -43,6 +46,7 @@
             border: 1px solid rgba(255,255,255,0.1);
             margin-bottom: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            position: relative;
         }
 
         .btn {
@@ -112,13 +116,29 @@
         }
         .vote-btn.voted { background: var(--primary); border-color: var(--primary); }
 
+        /* ПАСХАЛКА */
+        .secret-trigger {
+            position: fixed; bottom: 0; right: 0; width: 40px; height: 40px;
+            z-index: 999; cursor: default;
+        }
+        .secret-text {
+            position: fixed; bottom: 50px; right: 20px; font-size: 12px;
+            color: rgba(255, 255, 255, 0.5); opacity: 0; transition: opacity 1s;
+            pointer-events: none;
+        }
+        .secret-text.visible { opacity: 1; }
+
         .info-tag { font-size: 0.8rem; color: #aaa; text-align: center; margin-top: 5px; }
-        .version { position: fixed; bottom: 5px; right: 5px; font-size: 0.7rem; color: #444; }
+        .version { position: fixed; bottom: 5px; left: 5px; font-size: 0.7rem; color: #444; }
     </style>
 </head>
 <body>
 
-    <div class="version">v3.0 (Ultra)</div>
+    <div class="version">v4.0 (Fixes + Secret)</div>
+
+    <!-- ПАСХАЛКА -->
+    <div class="secret-trigger" onclick="activateSecret()"></div>
+    <div id="secret-text" class="secret-text">Я люблю Соню ❤️</div>
 
     <!-- 1. MENU -->
     <div id="screen-menu" class="screen active">
@@ -231,16 +251,18 @@
         };
 
         // ================= STATE =================
-        // МЕНЯЕМ ПРЕФИКС НА НОВЫЙ, ЧТОБЫ СБРОСИТЬ СТАРЫЕ СОЕДИНЕНИЯ
-        const APP_ID = "triplalo-spy-ultra-"; 
+        const APP_ID = "spy-fix-v4-"; // Новый ID для сброса кэша
         
         let peer, conn;
         let myId, hostId;
         let isHost = false;
         let myName = "";
-        let currentRoomCode = "----";
         
+        // Храним активные соединения для Хоста, чтобы чат работал
+        let hostConnections = []; 
+
         let state = {
+            roomCode: "----", // Код теперь в общем стейте, чтобы видели все
             phase: 'lobby', 
             players: [], 
             chat: [],
@@ -254,7 +276,6 @@
         }
 
         function joinGame() {
-            // Убираем пробелы и делаем верхний регистр
             const code = document.getElementById('join-code').value.trim().toUpperCase();
             if(code.length !== 4) return alert("Код должен быть 4 символа!");
             initPeer(false, code);
@@ -264,12 +285,13 @@
             myName = document.getElementById('my-name').value.trim() || (hostMode ? "Хост" : "Игрок");
             
             const roomCode = hostMode ? generateCode() : code;
-            currentRoomCode = roomCode;
+
+            // Если хост, сразу пишем код в стейт
+            if (hostMode) state.roomCode = roomCode;
 
             myId = APP_ID + roomCode + (hostMode ? "-host" : "-" + Math.random().toString(36).substr(2, 5));
             hostId = APP_ID + roomCode + "-host";
 
-            // Создаем Peer
             peer = new Peer(myId);
 
             peer.on('open', (id) => {
@@ -277,7 +299,6 @@
                     isHost = true;
                     state.players.push({ id: myId, name: myName, ready: false, voteCall: false });
                     
-                    document.getElementById('lobby-code').innerText = currentRoomCode;
                     document.getElementById('host-controls').style.display = 'block';
                     document.getElementById('btn-start').style.display = 'block';
                     showScreen('screen-lobby');
@@ -289,36 +310,34 @@
 
             if(hostMode) {
                 peer.on('connection', (c) => {
+                    // Добавляем соединение в массив хоста
+                    hostConnections.push(c);
+                    
                     c.on('data', (data) => handleDataHost(data, c.peer));
-                    c.on('close', () => removePlayer(c.peer));
+                    c.on('close', () => {
+                        hostConnections = hostConnections.filter(conn => conn !== c);
+                        removePlayer(c.peer);
+                    });
+                    
+                    // Сразу отправляем стейт новому игроку
+                    c.on('open', () => {
+                        c.send({ type: 'state', state: state });
+                    });
                 });
             }
 
             peer.on('error', err => {
-                console.log(err);
                 if(err.type === 'peer-unavailable') {
-                    alert("Комната " + currentRoomCode + " не найдена!\n\n1. Проверь код\n2. Убедись, что Хост в игре\n3. Обновите страницу оба (кэш)");
-                } else if(err.type === 'unavailable-id') {
-                    alert("Ошибка ID. Обнови страницу.");
+                    alert("Комната не найдена! Проверь код.");
                 } else {
-                    alert("Ошибка соединения (" + err.type + "). Попробуй еще раз.");
+                    alert("Ошибка: " + err.type);
                 }
             });
         }
 
         function connectToHost() {
             conn = peer.connect(hostId);
-            
-            // Таймер на случай, если соединение зависло
-            let connected = false;
-            setTimeout(() => {
-                if(!connected) {
-                    console.log("Connection timeout");
-                }
-            }, 5000);
-
             conn.on('open', () => {
-                connected = true;
                 conn.send({ type: 'join', name: myName });
                 showScreen('screen-lobby');
             });
@@ -327,39 +346,38 @@
         }
 
         function generateCode() {
-            // Генерируем код без похожих символов (O, 0, I, 1)
             const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
             let result = "";
-            for(let i=0; i<4; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
+            for(let i=0; i<4; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
             return result;
         }
 
         // ================= LOGIC: HOST =================
         function handleDataHost(data, peerId) {
+            let changed = false;
+
             if(data.type === 'join') {
                 if(!state.players.find(p => p.id === peerId)) {
                     state.players.push({ id: peerId, name: data.name, ready: false, voteCall: false });
+                    changed = true;
                 }
-                broadcastState();
             }
             if(data.type === 'ready') {
                 const p = state.players.find(p => p.id === peerId);
-                if(p) p.ready = data.value;
-                broadcastState();
+                if(p) { p.ready = data.value; changed = true; }
             }
             if(data.type === 'chat') {
                 state.chat.push({ name: data.name, text: data.text });
                 if(state.chat.length > 50) state.chat.shift();
-                broadcastState();
+                changed = true;
             }
             if(data.type === 'call_vote') {
                 const p = state.players.find(p => p.id === peerId);
-                if(p) p.voteCall = !p.voteCall; 
+                if(p) { p.voteCall = !p.voteCall; changed = true; }
                 checkVoteTrigger();
-                broadcastState();
             }
+
+            if(changed) broadcastState();
         }
 
         function updateSettings() {
@@ -375,11 +393,13 @@
         }
 
         function broadcastState() {
+            // Обновляем себя (Хоста)
             handleDataClient({ type: 'state', state: state });
-            state.players.forEach(p => {
-                if(p.id !== myId) {
-                    const c = peer.connect(p.id);
-                    c.on('open', () => c.send({ type: 'state', state: state }));
+            
+            // Рассылаем всем через сохраненные соединения
+            hostConnections.forEach(c => {
+                if(c.open) {
+                    c.send({ type: 'state', state: state });
                 }
             });
         }
@@ -387,7 +407,6 @@
         function hostStartGame() {
             if(state.players.length < 3) return alert("Нужно минимум 3 игрока!");
             
-            // Честный рандом
             let indices = state.players.map((_, i) => i);
             for (let i = indices.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -494,7 +513,9 @@
         function renderLobby() {
             const list = document.getElementById('lobby-player-list');
             list.innerHTML = "";
-            document.getElementById('lobby-code').innerText = currentRoomCode;
+            
+            // ТЕПЕРЬ КОД БЕРЕТСЯ ИЗ ОБЩЕГО СТЕЙТА
+            document.getElementById('lobby-code').innerText = state.roomCode;
 
             state.players.forEach(p => {
                 const div = document.createElement('div');
@@ -594,6 +615,24 @@
                 state.players.forEach(p => p.voteCall = false);
                 broadcastState();
             }
+        }
+
+        // --- ПАСХАЛКА ---
+        function activateSecret() {
+            const text = document.getElementById('secret-text');
+            text.classList.add('visible');
+            triggerConfetti();
+            setTimeout(() => text.classList.remove('visible'), 5000);
+        }
+
+        function triggerConfetti() {
+            const duration = 2000;
+            const end = Date.now() + duration;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#ff4757', '#2ed573', '#3742fa'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#ff4757', '#2ed573', '#3742fa'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
         }
     </script>
 </body>
