@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPY ONLINE PRO 🕵️‍♂️</title>
+    <title>SPY ONLINE FINAL 🕵️‍♂️</title>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800&family=Fredoka+One&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
@@ -230,11 +230,12 @@
         };
 
         // ================= STATE =================
-        const APP_ID = "spy-pro-v2-";
+        const APP_ID = "spy-game-"; // УПРОСТИЛ ID, ЧТОБЫ НЕ БЫЛО ПУТАНИЦЫ
         let peer, conn;
         let myId, hostId;
         let isHost = false;
         let myName = "";
+        let currentRoomCode = "----"; // ГЛОБАЛЬНАЯ ПЕРЕМЕННАЯ ДЛЯ КОДА
         
         let state = {
             phase: 'lobby', 
@@ -257,7 +258,11 @@
 
         function initPeer(hostMode, code = null) {
             myName = document.getElementById('my-name').value || (hostMode ? "Хост" : "Игрок");
+            
+            // ГЕНЕРИРУЕМ ИЛИ БЕРЕМ КОД
             const roomCode = hostMode ? generateCode() : code;
+            currentRoomCode = roomCode; // СОХРАНЯЕМ В ПЕРЕМЕННУЮ
+
             myId = APP_ID + roomCode + (hostMode ? "-host" : "-" + Math.random().toString(36).substr(2, 5));
             hostId = APP_ID + roomCode + "-host";
 
@@ -268,9 +273,8 @@
                     isHost = true;
                     state.players.push({ id: myId, name: myName, ready: false, voteCall: false });
                     
-                    // --- ВОТ ТУТ БЫЛА ОШИБКА, Я ИСПРАВИЛ ---
-                    // Раньше брался индекс [2], который был 'v2', теперь берем [3], который есть КОД.
-                    document.getElementById('lobby-code').innerText = roomCode;
+                    // ИСПРАВЛЕНИЕ: БЕРЕМ КОД ИЗ ПЕРЕМЕННОЙ
+                    document.getElementById('lobby-code').innerText = currentRoomCode;
                     
                     document.getElementById('host-controls').style.display = 'block';
                     document.getElementById('btn-start').style.display = 'block';
@@ -293,7 +297,7 @@
                 if(err.type === 'peer-unavailable') {
                     alert("Комната не найдена! Проверь код.");
                 } else {
-                    alert("Ошибка соединения: " + err.type);
+                    alert("Ошибка соединения. Возможно такой код уже есть, попробуй еще раз.");
                 }
             });
         }
@@ -472,11 +476,8 @@
             const list = document.getElementById('lobby-player-list');
             list.innerHTML = "";
             
-            // --- ТУТ ИСПРАВЛЕНИЕ ОТОБРАЖЕНИЯ КОДА ДЛЯ КЛИЕНТА ---
-            // Парсим ID хоста правильно
-            const codeParts = hostId.split('-');
-            // ID = spy-pro-v2-ABCD-host. Индексы: 0-1-2-3-4. Нам нужен 3.
-            document.getElementById('lobby-code').innerText = codeParts[3];
+            // ИСПРАВЛЕНИЕ: Используем переменную, а не парсим ID
+            document.getElementById('lobby-code').innerText = currentRoomCode;
 
             state.players.forEach(p => {
                 const div = document.createElement('div');
