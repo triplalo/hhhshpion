@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPY: v7 STABLE</title>
+    <title>SPY: LINK JOIN</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -11,19 +11,17 @@
 
     <style>
         :root {
-            --bg: #121212;
-            --surface: #1e1e1e;
-            --surface-2: #2c2c2c;
-            --primary: #ffffff;
-            --accent: #3b82f6;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #3b82f6;
+            --text: #f1f5f9;
+            --text-dim: #94a3b8;
+            --accent: #8b5cf6;
             --danger: #ef4444;
             --success: #22c55e;
-            --text: #e0e0e0;
-            --text-secondary: #a0a0a0;
-            --border: rgba(255,255,255,0.08);
         }
 
-        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; user-select: none; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; outline: none; }
 
         body {
             margin: 0;
@@ -40,243 +38,184 @@
             display: none;
             flex-direction: column;
             height: 100%;
-            padding: 24px;
-            max-width: 600px;
+            padding: 20px;
+            max-width: 500px;
             margin: 0 auto;
             width: 100%;
         }
         .screen.active { display: flex; }
 
-        h1 { font-weight: 800; font-size: 1.5rem; margin: 0 0 24px 0; letter-spacing: -0.5px; text-align: center; }
+        h1 { font-weight: 800; font-size: 1.8rem; text-align: center; margin-bottom: 20px; letter-spacing: -1px; }
 
         .card {
             background: var(--surface);
             border-radius: 16px;
-            padding: 24px;
-            border: 1px solid var(--border);
-            margin-bottom: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-        }
-
-        .label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
         input, select {
-            width: 100%;
-            padding: 16px;
-            background: var(--surface-2);
-            border: 1px solid transparent;
-            color: white;
-            font-family: inherit;
-            font-size: 1rem;
-            border-radius: 12px;
-            margin-bottom: 16px;
-            transition: 0.2s;
-            text-align: center;
+            width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155;
+            color: white; border-radius: 10px; font-size: 1rem; text-align: center;
+            margin-bottom: 10px; font-family: inherit; transition: 0.2s;
         }
-        input:focus { border-color: var(--accent); background: #333; }
+        input:focus { border-color: var(--primary); }
 
         .btn {
-            width: 100%;
-            padding: 16px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.2s;
-            margin-bottom: 12px;
-            display: flex; align-items: center; justify-content: center;
+            width: 100%; padding: 14px; border: none; border-radius: 10px;
+            font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 10px;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center;
         }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:active { transform: scale(0.98); opacity: 0.9; }
+        .btn:disabled { opacity: 0.5; cursor: wait; }
 
-        .btn-primary { background: var(--primary); color: black; }
-        .btn-accent { background: var(--accent); color: white; }
-        .btn-danger { background: var(--surface-2); color: var(--danger); border: 1px solid var(--border); }
-        .btn-ready { background: var(--surface-2); color: var(--text-secondary); }
-        .btn-ready.is-ready { background: var(--success); color: black; }
-        .btn-ghost { background: transparent; color: var(--text-secondary); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-copy { background: var(--accent); color: white; }
 
         /* LOBBY */
         .room-code {
-            font-size: 3rem;
-            font-weight: 800;
-            text-align: center;
-            letter-spacing: 8px;
-            color: var(--primary);
-            margin: 10px 0;
-            user-select: text; /* Чтобы можно было скопировать */
+            font-size: 2.5rem; font-weight: 800; text-align: center;
+            letter-spacing: 5px; color: var(--primary); margin: 10px 0;
+            cursor: pointer;
         }
-
-        .player-list {
-            flex-grow: 1; overflow-y: auto; margin: 16px 0; padding-right: 4px;
-        }
+        
+        .player-list { flex-grow: 1; overflow-y: auto; margin: 10px 0; }
         .player-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 16px; background: var(--surface); border-radius: 12px;
-            margin-bottom: 8px; border: 1px solid var(--border);
+            padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px;
         }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
-        .dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-ready { color: var(--success); font-size: 0.8rem; font-weight: bold; }
+        .status-wait { color: var(--text-dim); font-size: 0.8rem; }
 
         /* GAME */
-        .role-wrapper {
-            flex-grow: 1; display: flex; flex-direction: column;
-            align-items: center; justify-content: center; position: relative;
+        .role-area {
+            flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
         }
-
-        .reveal-btn {
-            width: 220px; height: 220px; border-radius: 50%;
-            background: var(--surface); border: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 1rem; color: var(--text-secondary); font-weight: 600;
-            cursor: pointer; user-select: none;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; padding: 20px;
-            transition: 0.2s;
-            -webkit-touch-callout: none;
+        .hold-btn {
+            width: 200px; height: 200px; border-radius: 50%;
+            background: var(--surface); border: 2px solid var(--text-dim);
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            font-weight: bold; color: var(--text-dim); cursor: pointer;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2); transition: 0.2s;
+            -webkit-user-select: none; -webkit-touch-callout: none;
         }
-        .reveal-btn:active { transform: scale(0.95); background: var(--surface-2); }
-        .reveal-btn > * { pointer-events: none; }
-
+        .hold-btn:active { transform: scale(0.95); background: #334155; }
+        
         .role-card {
-            display: none; position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); width: 280px;
-            background: #fff; color: #000; border-radius: 20px;
-            padding: 30px; text-align: center; z-index: 20;
-            pointer-events: none; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 260px; background: white; color: black; padding: 30px; border-radius: 20px;
+            text-align: center; z-index: 10; pointer-events: none;
         }
         .role-card.spy { background: var(--danger); color: white; }
-        .role-icon { font-size: 3rem; margin-bottom: 10px; }
-        .role-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
-        .role-desc { font-size: 0.9rem; opacity: 0.7; }
+        .role-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 5px; }
 
         /* CHAT */
-        .chat-box {
-            height: 150px; display: flex; flex-direction: column;
-            background: var(--surface); border-radius: 12px;
-            overflow: hidden; border: 1px solid var(--border);
-        }
-        .chat-history { flex-grow: 1; overflow-y: auto; padding: 12px; font-size: 0.9rem; }
-        .chat-msg { margin-bottom: 4px; }
-        .chat-msg b { color: var(--text); font-weight: 600; margin-right: 6px; }
-        .chat-input-area { display: flex; border-top: 1px solid var(--border); }
-        .chat-inp {
-            flex-grow: 1; background: transparent; border: none; padding: 12px;
-            color: white; font-size: 0.9rem; margin: 0; text-align: left;
-        }
-        .chat-send { background: var(--surface-2); border: none; color: white; width: 50px; cursor: pointer; }
+        .chat-box { height: 150px; display: flex; flex-direction: column; background: rgba(0,0,0,0.2); border-radius: 10px; margin-top: 10px; }
+        .chat-history { flex-grow: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; }
+        .chat-inp-row { display: flex; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-inp { flex-grow: 1; background: transparent; border: none; padding: 10px; color: white; text-align: left; }
+        .chat-send { width: 50px; background: var(--surface); border: none; color: var(--primary); font-weight: bold; }
 
         /* EXTRAS */
-        .footer { margin-top: auto; text-align: center; padding: 10px; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; }
-        .heart { display: inline-block; transition: transform 0.2s; color: #555; }
-        .heart:hover { color: var(--danger); transform: scale(1.2); }
-        .secret-popup {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); padding: 20px 40px; border-radius: 50px;
-            color: white; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.5s; z-index: 999;
+        .status-bar { 
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: #0f172a; padding: 5px; text-align: center; 
+            font-size: 0.7rem; color: #64748b; border-top: 1px solid #334155;
         }
-        .secret-popup.show { opacity: 1; }
+        .secret-trig { position: fixed; bottom: 30px; right: 0; width: 30px; height: 30px; }
     </style>
 </head>
 <body>
 
-    <div id="secret-popup" class="secret-popup">Я люблю Соню ❤️</div>
+    <!-- STATUS BAR -->
+    <div class="status-bar" id="status-bar">v8.0 • Готов к работе</div>
 
     <!-- 1. MENU -->
     <div id="screen-menu" class="screen active">
-        <h1 style="color: var(--text);">Spy Game</h1>
+        <h1>SPY GAME</h1>
         
         <div class="card">
-            <div class="label">Твой никнейм</div>
-            <input type="text" id="inp-nickname" placeholder="Имя">
-        </div>
+            <label style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; display: block;">ТВОЕ ИМЯ</label>
+            <input type="text" id="inp-name" placeholder="Введи никнейм">
+            
+            <div style="height: 15px;"></div>
 
-        <div class="card" style="border:none; background:transparent; padding:0; box-shadow:none;">
-            <button id="btn-create-lobby" class="btn btn-primary" onclick="Game.createLobby()">Создать игру</button>
-            <div style="text-align:center; margin:15px; color:var(--text-secondary); font-size:0.8rem;">или</div>
-            <input type="text" id="inp-code" placeholder="Код комнаты (4 символа)" style="margin-bottom:8px;">
-            <button id="btn-join-lobby" class="btn btn-accent" onclick="Game.joinLobby()">Войти</button>
+            <button class="btn btn-primary" onclick="Game.createLobby()">СОЗДАТЬ ИГРУ</button>
+            
+            <div style="text-align:center; margin:15px; color:var(--text-dim); font-size:0.8rem;">или</div>
+            
+            <input type="text" id="inp-code" placeholder="КОД КОМНАТЫ" style="text-transform:uppercase; letter-spacing:3px;">
+            <button class="btn btn-outline" onclick="Game.joinLobby()">ВОЙТИ ПО КОДУ</button>
         </div>
         
-        <div class="footer" onclick="activateSecret()">
-            v7.0 Stable • <span class="heart">❤️</span>
-        </div>
+        <div class="secret-trig" onclick="activateSecret()"></div>
     </div>
 
     <!-- 2. LOBBY -->
     <div id="screen-lobby" class="screen">
-        <div class="label" style="text-align:center;">Код комнаты</div>
-        <div class="room-code" id="lobby-code-disp">----</div>
-
-        <div id="host-settings" style="display:none; margin-bottom: 20px;">
-            <div style="display:flex; gap:10px;">
-                <select id="sel-spies" onchange="Game.updateSettings()">
-                    <option value="1">1 Шпион</option>
-                    <option value="2">2 Шпиона</option>
-                </select>
-                <select id="sel-pack" onchange="Game.updateSettings()">
-                    <option value="mix">Все игры</option>
-                    <option value="dota">Dota 2</option>
-                    <option value="clash">Clash</option>
-                </select>
-            </div>
+        <div class="card" style="text-align:center;">
+            <div style="font-size:0.8rem; color:var(--text-dim);">КОД КОМНАТЫ</div>
+            <div class="room-code" id="lobby-code">----</div>
+            <button class="btn btn-copy" onclick="Game.copyLink()">🔗 СКОПИРОВАТЬ ССЫЛКУ</button>
         </div>
 
-        <div class="label">Игроки</div>
+        <div id="host-panel" style="display:none; margin-bottom:10px; display:flex; gap:5px;">
+             <select id="sel-spies" style="margin:0;" onchange="Game.sendSettings()">
+                 <option value="1">1 Шпион</option>
+                 <option value="2">2 Шпиона</option>
+             </select>
+             <select id="sel-pack" style="margin:0;" onchange="Game.sendSettings()">
+                 <option value="mix">Все игры</option>
+                 <option value="dota">Dota 2</option>
+                 <option value="clash">Clash</option>
+             </select>
+        </div>
+
         <div class="player-list" id="lobby-list"></div>
 
-        <button id="btn-ready" class="btn btn-ready" onclick="Game.toggleReady()">Готов</button>
-        <button id="btn-start" class="btn btn-primary" onclick="Game.hostStart()" style="display:none;">Начать игру</button>
+        <button id="btn-ready" class="btn btn-outline" onclick="Game.toggleReady()">ГОТОВ</button>
+        <button id="btn-start" class="btn btn-primary" onclick="Game.hostStart()" style="display:none;">НАЧАТЬ</button>
 
         <div class="chat-box">
             <div class="chat-history" id="lobby-chat"></div>
-            <div class="chat-input-area">
-                <input type="text" class="chat-inp" id="lobby-chat-inp" placeholder="Написать...">
-                <button class="chat-send" onclick="Game.sendChat('lobby')">➤</button>
+            <div class="chat-inp-row">
+                <input type="text" class="chat-inp" id="lobby-inp" placeholder="Чат...">
+                <button class="chat-send" onclick="Game.chat('lobby')">➤</button>
             </div>
         </div>
     </div>
 
     <!-- 3. GAME -->
     <div id="screen-game" class="screen">
-        <div class="role-wrapper">
-            <div class="reveal-btn" id="reveal-btn"
-                 onmousedown="Game.showRole(event)" 
-                 onmouseup="Game.hideRole(event)"
-                 onmouseleave="Game.hideRole(event)"
-                 ontouchstart="Game.showRole(event)" 
-                 ontouchend="Game.hideRole(event)"
-                 ontouchcancel="Game.hideRole(event)">
-                <span>Удерживай,<br>чтобы увидеть роль</span>
+        <div class="role-area">
+            <div class="hold-btn" id="reveal-btn"
+                 onmousedown="Game.show(true)" onmouseup="Game.show(false)"
+                 onmouseleave="Game.show(false)"
+                 ontouchstart="Game.show(true)" ontouchend="Game.show(false)">
+                УДЕРЖИВАЙ<br>ЧТОБЫ УВИДЕТЬ<br>РОЛЬ
             </div>
-
+            
             <div id="role-card" class="role-card">
-                <div id="role-icon" class="role-icon"></div>
-                <div id="role-name" class="role-name"></div>
-                <div id="role-desc" class="role-desc"></div>
+                <div id="r-icon" style="font-size:3rem;"></div>
+                <div id="r-name" class="role-title"></div>
+                <div id="r-desc"></div>
             </div>
         </div>
 
-        <div style="margin-bottom: 20px;">
-             <button class="btn btn-danger" onclick="alert('Обсудите и выберите шпиона вслух!')">Вызвать голосование</button>
-        </div>
+        <button class="btn btn-danger" onclick="alert('Голосуйте вслух!')">🚨 ГОЛОСОВАНИЕ</button>
+        <button id="btn-end" class="btn btn-outline" onclick="Game.endGame()" style="display:none;">ЗАВЕРШИТЬ</button>
 
-        <div class="chat-box">
+        <div class="chat-box" style="height:120px;">
             <div class="chat-history" id="game-chat"></div>
-            <div class="chat-input-area">
-                <input type="text" class="chat-inp" id="game-chat-inp" placeholder="Обсуждение...">
-                <button class="chat-send" onclick="Game.sendChat('game')">➤</button>
+            <div class="chat-inp-row">
+                <input type="text" class="chat-inp" id="game-inp" placeholder="Обсуждение...">
+                <button class="chat-send" onclick="Game.chat('game')">➤</button>
             </div>
         </div>
-        
-        <button class="btn btn-ghost" onclick="Game.endGame()" id="host-end-btn" style="display:none; margin-top:10px;">Завершить игру</button>
     </div>
 
     <script>
@@ -287,112 +226,90 @@
         };
 
         const Game = {
-            peer: null, conn: null, myId: null, myName: '', isHost: false, roomCode: '',
-            hostConnections: [],
+            peer: null, conn: null, myId: null, roomCode: null, isHost: false, name: '',
+            hostConns: [],
             state: { phase: 'menu', players: [], chat: [], settings: { spies: 1, pack: 'mix' } },
+
+            // --- STARTUP ---
+            init: function() {
+                // Проверяем ссылку (если пришли по приглашению)
+                const params = new URLSearchParams(window.location.search);
+                const codeFromUrl = params.get('code');
+                if(codeFromUrl) {
+                    document.getElementById('inp-code').value = codeFromUrl;
+                }
+            },
+
+            setStatus: function(msg) {
+                document.getElementById('status-bar').innerText = msg;
+            },
 
             showScreen: function(id) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 document.getElementById(id).classList.add('active');
-                if(id === 'screen-lobby') this.renderChat('lobby');
-                if(id === 'screen-game') this.renderChat('game');
             },
 
-            // --- PEERJS LOGIC ---
+            // --- NETWORKING ---
             createLobby: function() {
-                const btn = document.getElementById('btn-create-lobby');
-                btn.innerText = "Создание...";
-                btn.disabled = true;
-
-                // Генерация кода и ID
+                this.name = document.getElementById('inp-name').value.trim() || "Host";
                 this.roomCode = Math.random().toString(36).substr(2, 4).toUpperCase();
-                // Используем v7 префикс для изоляции от старых версий
-                this.myId = `spy-party-v7-${this.roomCode}`;
+                // Используем префикс v8 и код комнаты. Если ID занят, PeerJS вернет ошибку.
+                this.myId = `spy-v8-${this.roomCode}`;
                 this.isHost = true;
-                this.myName = document.getElementById('inp-nickname').value.trim() || "Admin";
-                
-                this.initPeer();
+                this.startPeer();
             },
 
             joinLobby: function() {
-                const btn = document.getElementById('btn-join-lobby');
-                btn.innerText = "Вход...";
-                btn.disabled = true;
-
-                const code = document.getElementById('inp-code').value.trim().toUpperCase();
-                if(code.length !== 4) {
-                    btn.innerText = "Войти"; btn.disabled = false;
-                    return alert("Код должен быть 4 символа");
-                }
+                this.name = document.getElementById('inp-name').value.trim() || "Player";
+                this.roomCode = document.getElementById('inp-code').value.trim().toUpperCase();
+                if(this.roomCode.length !== 4) return alert("Код должен быть 4 символа");
                 
-                this.roomCode = code;
-                this.myId = `spy-player-v7-${Date.now()}`;
+                // Для клиента генерируем случайный ID
+                this.myId = `spy-client-${Date.now()}`;
                 this.isHost = false;
-                this.myName = document.getElementById('inp-nickname').value.trim() || "Player";
-                
-                this.initPeer();
+                this.startPeer();
             },
 
-            initPeer: function() {
-                if (this.peer) this.peer.destroy();
+            startPeer: function() {
+                this.setStatus("Подключение к серверу...");
+                
+                if(this.peer) this.peer.destroy();
                 this.peer = new Peer(this.myId);
 
                 this.peer.on('open', (id) => {
-                    console.log('Connected to PeerJS server:', id);
-                    if (this.isHost) {
-                        this.state.players = [{ id: this.myId, name: this.myName, ready: true }];
-                        this.state.phase = 'lobby';
-                        this.showScreen('screen-lobby');
-                        this.renderLobby();
+                    this.setStatus(`Подключено. ID: ${id}`);
+                    if(this.isHost) {
+                        this.state.players = [{ id: this.myId, name: this.name, ready: true }];
+                        this.enterLobby();
                     } else {
-                        // Коннект к хосту
-                        this.conn = this.peer.connect(`spy-party-v7-${this.roomCode}`);
-                        
-                        this.conn.on('open', () => {
-                            this.conn.send({ type: 'JOIN', id: this.myId, name: this.myName });
-                        });
-                        
-                        this.conn.on('data', (data) => {
-                            if(data.type === 'SYNC') {
-                                this.state = data.state;
-                                this.renderApp();
-                            }
-                        });
-
-                        this.conn.on('close', () => { 
-                            alert("Хост вышел"); location.reload(); 
-                        });
-
-                        // Таймаут если хост не найден
-                        setTimeout(() => {
-                            if(!this.conn.open) {
-                                alert("Лобби не найдено! Проверь код.");
-                                location.reload();
-                            }
-                        }, 5000);
+                        this.connectHost();
                     }
                 });
 
-                this.peer.on('error', err => {
+                this.peer.on('error', (err) => {
                     console.error(err);
-                    if(this.isHost && err.type === 'unavailable-id') {
-                        // Если ID занят, пробуем сгенерировать новый код
-                        this.peer.destroy();
-                        this.roomCode = Math.random().toString(36).substr(2, 4).toUpperCase();
-                        this.myId = `spy-party-v7-${this.roomCode}`;
-                        this.initPeer(); // Рекурсия
+                    if(err.type === 'unavailable-id') {
+                        // Если мы хост и ID занят -> значит комната уже есть или зависла
+                        if(this.isHost) {
+                            alert("Код комнаты занят. Пробуем другой...");
+                            this.createLobby(); // Рекурсия (пробуем снова)
+                        } else {
+                            this.setStatus("Ошибка ID");
+                        }
+                    } else if (err.type === 'peer-unavailable') {
+                         alert("Комната не найдена! Проверь код.");
+                         this.setStatus("Комната не найдена");
                     } else {
-                        alert("Ошибка сети: " + err.type);
-                        location.reload();
+                        this.setStatus("Ошибка сети: " + err.type);
                     }
                 });
 
-                if (this.isHost) {
+                if(this.isHost) {
                     this.peer.on('connection', (conn) => {
-                        this.hostConnections.push(conn);
-                        conn.on('data', (data) => this.handleHostData(data));
+                        this.hostConns.push(conn);
+                        conn.on('data', (data) => this.hostHandleData(data));
                         conn.on('close', () => {
-                            this.hostConnections = this.hostConnections.filter(c => c !== conn);
+                            this.hostConns = this.hostConns.filter(c => c !== conn);
                             this.state.players = this.state.players.filter(p => p.id !== conn.peer);
                             this.broadcast();
                         });
@@ -401,51 +318,81 @@
                 }
             },
 
-            // --- HOST DATA HANDLER ---
-            handleHostData: function(data) {
-                let update = false;
+            connectHost: function() {
+                const targetId = `spy-v8-${this.roomCode}`;
+                this.setStatus(`Поиск комнаты ${this.roomCode}...`);
+                
+                this.conn = this.peer.connect(targetId);
+                
+                this.conn.on('open', () => {
+                    this.setStatus("Подключено к хосту!");
+                    this.conn.send({ type: 'JOIN', id: this.myId, name: this.name });
+                });
+
+                this.conn.on('data', (data) => {
+                    if(data.type === 'SYNC') {
+                        this.state = data.state;
+                        this.render();
+                    }
+                });
+
+                this.conn.on('close', () => {
+                    alert("Хост отключился"); location.href = location.pathname;
+                });
+            },
+
+            // --- HOST LOGIC ---
+            hostHandleData: function(data) {
+                let upd = false;
                 if(data.type === 'JOIN') {
                     if(!this.state.players.find(p => p.id === data.id)) {
                         this.state.players.push({ id: data.id, name: data.name, ready: false });
-                        update = true;
+                        upd = true;
                     }
                 }
                 if(data.type === 'READY') {
                     const p = this.state.players.find(p => p.id === data.id);
-                    if(p) { p.ready = !p.ready; update = true; }
+                    if(p) { p.ready = !p.ready; upd = true; }
                 }
                 if(data.type === 'CHAT') {
                     this.state.chat.push(data.msg);
                     if(this.state.chat.length > 30) this.state.chat.shift();
-                    update = true;
+                    upd = true;
                 }
-                if(update) this.broadcast();
+                if(upd) this.broadcast();
             },
 
             broadcast: function() {
-                this.renderApp();
-                this.hostConnections.forEach(c => {
+                this.render();
+                this.hostConns.forEach(c => {
                     if(c.open) c.send({ type: 'SYNC', state: this.state });
                 });
             },
 
-            updateSettings: function() {
-                this.state.settings.spies = parseInt(document.getElementById('sel-spies').value);
+            sendSettings: function() {
+                if(!this.isHost) return;
+                this.state.settings.spies = document.getElementById('sel-spies').value;
                 this.state.settings.pack = document.getElementById('sel-pack').value;
                 this.broadcast();
             },
 
-            // --- GAME ACTIONS ---
+            // --- ACTIONS ---
+            enterLobby: function() {
+                this.state.phase = 'lobby';
+                this.showScreen('screen-lobby');
+                this.render();
+            },
+
             toggleReady: function() {
                 if(this.isHost) return;
                 this.conn.send({ type: 'READY', id: this.myId });
             },
 
-            sendChat: function(ctx) {
-                const inp = document.getElementById(ctx + '-chat-inp');
-                const text = inp.value.trim();
-                if(!text) return;
-                const msg = { name: this.myName, text: text };
+            chat: function(ctx) {
+                const inp = document.getElementById(ctx + '-inp');
+                const txt = inp.value.trim();
+                if(!txt) return;
+                const msg = { name: this.name, text: txt };
                 
                 if(this.isHost) {
                     this.state.chat.push(msg);
@@ -457,25 +404,25 @@
             },
 
             hostStart: function() {
-                if(this.state.players.length < 3) return alert("Минимум 3 игрока!");
+                if(this.state.players.length < 3) return alert("Нужно 3 игрока!");
                 
-                let indices = this.state.players.map((_, i) => i);
-                // Shuffle logic (Fisher-Yates)
-                for (let i = indices.length - 1; i > 0; i--) {
+                // Random
+                let idxs = this.state.players.map((_, i) => i);
+                for (let i = idxs.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                    [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
                 }
 
                 let pool = [];
                 const pack = this.state.settings.pack;
                 if(pack === 'mix') pool = [...DB.dota, ...DB.clash, ...DB.brawl];
                 else pool = DB[pack];
+                
                 const loc = pool[Math.floor(Math.random() * pool.length)];
+                const spies = this.state.settings.spies;
 
-                const spyCount = this.state.settings.spies;
-                this.state.players.forEach((p, idx) => {
-                    const isSpy = indices.indexOf(idx) < spyCount;
-                    p.isSpy = isSpy;
+                this.state.players.forEach((p, i) => {
+                    p.isSpy = idxs.indexOf(i) < spies;
                     p.location = loc;
                 });
 
@@ -483,114 +430,110 @@
                 this.state.chat = [];
                 this.broadcast();
             },
-            
+
             endGame: function() {
                 this.state.phase = 'lobby';
                 this.state.players.forEach(p => p.ready = false);
                 this.broadcast();
             },
 
-            // --- RENDERING ---
-            renderApp: function() {
-                if(this.state.phase === 'lobby') {
-                    this.showScreen('screen-lobby');
-                    this.renderLobby();
-                } else if(this.state.phase === 'game') {
-                    this.showScreen('screen-game');
-                    this.renderGameRole();
-                }
+            copyLink: function() {
+                // Формируем ссылку: текущий URL + ?code=КОД
+                const url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?code=" + this.roomCode;
+                navigator.clipboard.writeText(url).then(() => {
+                    alert("Ссылка скопирована!");
+                });
             },
 
-            renderLobby: function() {
-                document.getElementById('lobby-code-disp').innerText = this.roomCode;
-                const list = document.getElementById('lobby-list');
-                list.innerHTML = '';
-                this.state.players.forEach(p => {
-                    list.innerHTML += `
-                        <div class="player-item">
-                            <span>${p.name} ${p.id === this.myId ? '(Вы)' : ''}</span>
-                            <div class="dot ${p.ready ? 'active' : ''}"></div>
-                        </div>`;
-                });
+            // --- RENDER ---
+            render: function() {
+                if(this.state.phase === 'lobby') {
+                    this.showScreen('screen-lobby');
+                    document.getElementById('lobby-code').innerText = this.roomCode;
+                    
+                    // Host settings visibility
+                    const hostPanel = document.getElementById('host-panel');
+                    const btnStart = document.getElementById('btn-start');
+                    const btnReady = document.getElementById('btn-ready');
 
-                if(this.isHost) {
-                    document.getElementById('host-settings').style.display = 'block';
-                    document.getElementById('btn-start').style.display = 'block';
-                    document.getElementById('btn-ready').style.display = 'none';
-                } else {
-                    document.getElementById('host-settings').style.display = 'none';
-                    document.getElementById('btn-start').style.display = 'none';
-                    const btn = document.getElementById('btn-ready');
-                    btn.style.display = 'block';
-                    const me = this.state.players.find(p => p.id === this.myId);
-                    if(me && me.ready) {
-                        btn.innerText = "Не готов";
-                        btn.classList.add('is-ready');
+                    if(this.isHost) {
+                        hostPanel.style.display = 'flex';
+                        btnStart.style.display = 'block';
+                        btnReady.style.display = 'none';
                     } else {
-                        btn.innerText = "Готов";
-                        btn.classList.remove('is-ready');
+                        hostPanel.style.display = 'none';
+                        btnStart.style.display = 'none';
+                        btnReady.style.display = 'block';
                     }
+
+                    // Players
+                    const list = document.getElementById('lobby-list');
+                    list.innerHTML = '';
+                    this.state.players.forEach(p => {
+                        const status = p.ready ? '<span class="status-ready">ГОТОВ</span>' : '<span class="status-wait">ЖДЕТ</span>';
+                        list.innerHTML += `<div class="player-item"><span>${p.name}</span>${status}</div>`;
+                    });
+
+                    // Self Ready State
+                    const me = this.state.players.find(p => p.id === this.myId);
+                    if(me && !this.isHost) {
+                        btnReady.innerText = me.ready ? "НЕ ГОТОВ" : "ГОТОВ";
+                        btnReady.style.background = me.ready ? "transparent" : "";
+                        btnReady.style.border = me.ready ? "1px solid #94a3b8" : "";
+                    }
+
+                    this.renderChat('lobby');
+                } 
+                else if(this.state.phase === 'game') {
+                    this.showScreen('screen-game');
+                    this.renderRole();
+                    this.renderChat('game');
+                    document.getElementById('btn-end').style.display = this.isHost ? 'block' : 'none';
                 }
-                this.renderChat('lobby');
             },
 
             renderChat: function(ctx) {
                 const box = document.getElementById(ctx + '-chat');
                 box.innerHTML = '';
                 this.state.chat.forEach(m => {
-                    box.innerHTML += `<div class="chat-msg"><b>${m.name}:</b><span>${m.text}</span></div>`;
+                    box.innerHTML += `<div class="chat-msg"><b>${m.name}:</b> ${m.text}</div>`;
                 });
                 box.scrollTop = box.scrollHeight;
             },
 
-            renderGameRole: function() {
+            renderRole: function() {
                 const me = this.state.players.find(p => p.id === this.myId);
                 const card = document.getElementById('role-card');
-                const icon = document.getElementById('role-icon');
-                const name = document.getElementById('role-name');
-                const desc = document.getElementById('role-desc');
-                const endBtn = document.getElementById('host-end-btn');
-
-                endBtn.style.display = this.isHost ? 'block' : 'none';
+                const icon = document.getElementById('r-icon');
+                const title = document.getElementById('r-name');
+                const desc = document.getElementById('r-desc');
 
                 if(me.isSpy) {
                     card.classList.add('spy');
                     icon.innerText = "🕵️‍♂️";
-                    name.innerText = "ТЫ ШПИОН";
-                    desc.innerText = "Не спались!";
+                    title.innerText = "ТЫ ШПИОН";
+                    desc.innerText = "Не выдай себя!";
                 } else {
                     card.classList.remove('spy');
                     icon.innerText = "🛡️";
-                    name.innerText = me.location;
+                    title.innerText = me.location;
                     desc.innerText = "Мирный житель";
                 }
             },
 
-            showRole: function(e) {
-                if(e.cancelable) e.preventDefault();
-                const card = document.getElementById('role-card');
-                const btn = document.getElementById('reveal-btn');
-                card.style.display = 'block';
-                btn.style.opacity = '0.3';
-                btn.style.transform = 'scale(0.95)';
-            },
-
-            hideRole: function(e) {
-                if(e && e.cancelable) e.preventDefault();
-                const card = document.getElementById('role-card');
-                const btn = document.getElementById('reveal-btn');
-                card.style.display = 'none';
-                btn.style.opacity = '1';
-                btn.style.transform = 'scale(1)';
+            show: function(vis) {
+                document.getElementById('role-card').style.display = vis ? 'block' : 'none';
+                document.getElementById('reveal-btn').style.opacity = vis ? '0.2' : '1';
             }
         };
 
         function activateSecret() {
-            const popup = document.getElementById('secret-popup');
-            popup.classList.add('show');
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
-            setTimeout(() => popup.classList.remove('show'), 3000);
+            alert("Я люблю Соню ❤️");
         }
+
+        // Auto init
+        window.onload = () => Game.init();
     </script>
 </body>
 </html>
