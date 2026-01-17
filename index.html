@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPY: MINIMAL</title>
+    <title>SPY: v7 STABLE</title>
     
-    <!-- Шрифт Inter (стандарт современного минимализма) -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
@@ -17,7 +15,7 @@
             --surface: #1e1e1e;
             --surface-2: #2c2c2c;
             --primary: #ffffff;
-            --accent: #3b82f6; /* Спокойный синий */
+            --accent: #3b82f6;
             --danger: #ef4444;
             --success: #22c55e;
             --text: #e0e0e0;
@@ -38,7 +36,6 @@
             overflow: hidden;
         }
 
-        /* --- UI COMPONENTS --- */
         .screen {
             display: none;
             flex-direction: column;
@@ -98,15 +95,16 @@
             display: flex; align-items: center; justify-content: center;
         }
         .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
         .btn-primary { background: var(--primary); color: black; }
         .btn-accent { background: var(--accent); color: white; }
         .btn-danger { background: var(--surface-2); color: var(--danger); border: 1px solid var(--border); }
-        .btn-ghost { background: transparent; color: var(--text-secondary); }
         .btn-ready { background: var(--surface-2); color: var(--text-secondary); }
         .btn-ready.is-ready { background: var(--success); color: black; }
+        .btn-ghost { background: transparent; color: var(--text-secondary); }
 
-        /* --- LOBBY --- */
+        /* LOBBY */
         .room-code {
             font-size: 3rem;
             font-weight: 800;
@@ -114,124 +112,77 @@
             letter-spacing: 8px;
             color: var(--primary);
             margin: 10px 0;
+            user-select: text; /* Чтобы можно было скопировать */
         }
 
         .player-list {
-            flex-grow: 1;
-            overflow-y: auto;
-            margin: 16px 0;
-            padding-right: 4px;
+            flex-grow: 1; overflow-y: auto; margin: 16px 0; padding-right: 4px;
         }
         .player-item {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 16px;
-            background: var(--surface);
-            border-radius: 12px;
-            margin-bottom: 8px;
-            border: 1px solid var(--border);
+            padding: 16px; background: var(--surface); border-radius: 12px;
+            margin-bottom: 8px; border: 1px solid var(--border);
         }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #444; }
         .dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
 
-        /* --- CHAT --- */
-        .chat-box {
-            height: 180px;
-            display: flex; flex-direction: column;
-            background: var(--surface);
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid var(--border);
-        }
-        .chat-history {
-            flex-grow: 1; overflow-y: auto; padding: 12px; font-size: 0.9rem;
-        }
-        .chat-msg { margin-bottom: 4px; }
-        .chat-msg b { color: var(--text); font-weight: 600; margin-right: 6px; }
-        .chat-msg span { color: var(--text-secondary); }
-        .chat-input-area {
-            display: flex; border-top: 1px solid var(--border);
-        }
-        .chat-inp {
-            flex-grow: 1; background: transparent; border: none; padding: 12px;
-            color: white; font-size: 0.9rem; margin: 0; text-align: left;
-        }
-        .chat-send {
-            background: var(--surface-2); border: none; color: white; width: 50px; cursor: pointer;
-        }
-
-        /* --- GAME --- */
+        /* GAME */
         .role-wrapper {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+            flex-grow: 1; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; position: relative;
         }
 
-        /* КНОПКА ПОКАЗАТЬ РОЛЬ (ИСПРАВЛЕНА) */
         .reveal-btn {
-            width: 220px; height: 220px;
-            border-radius: 50%;
-            background: var(--surface);
-            border: 1px solid var(--border);
+            width: 220px; height: 220px; border-radius: 50%;
+            background: var(--surface); border: 1px solid var(--border);
             display: flex; align-items: center; justify-content: center;
-            font-size: 1rem; color: var(--text-secondary);
-            font-weight: 600;
-            cursor: pointer;
-            user-select: none;
+            font-size: 1rem; color: var(--text-secondary); font-weight: 600;
+            cursor: pointer; user-select: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); text-align: center; padding: 20px;
             transition: 0.2s;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            text-align: center;
-            padding: 20px;
+            -webkit-touch-callout: none;
         }
         .reveal-btn:active { transform: scale(0.95); background: var(--surface-2); }
-        
-        /* Важно: чтобы текст внутри кнопки не перехватывал клик */
         .reveal-btn > * { pointer-events: none; }
 
-        /* КАРТОЧКА РОЛИ */
         .role-card {
-            display: none;
-            position: absolute;
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 280px;
-            background: #fff;
-            color: #000;
-            border-radius: 20px;
-            padding: 30px;
-            text-align: center;
-            z-index: 20;
-            pointer-events: none; /* Чтобы нельзя было выделить */
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); width: 280px;
+            background: #fff; color: #000; border-radius: 20px;
+            padding: 30px; text-align: center; z-index: 20;
+            pointer-events: none; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
         }
         .role-card.spy { background: var(--danger); color: white; }
         .role-icon { font-size: 3rem; margin-bottom: 10px; }
         .role-name { font-size: 1.5rem; font-weight: 800; margin-bottom: 5px; }
         .role-desc { font-size: 0.9rem; opacity: 0.7; }
 
-        /* --- FOOTER / EASTER EGG --- */
-        .footer {
-            margin-top: auto;
-            text-align: center;
-            padding: 10px;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            cursor: pointer;
+        /* CHAT */
+        .chat-box {
+            height: 150px; display: flex; flex-direction: column;
+            background: var(--surface); border-radius: 12px;
+            overflow: hidden; border: 1px solid var(--border);
         }
+        .chat-history { flex-grow: 1; overflow-y: auto; padding: 12px; font-size: 0.9rem; }
+        .chat-msg { margin-bottom: 4px; }
+        .chat-msg b { color: var(--text); font-weight: 600; margin-right: 6px; }
+        .chat-input-area { display: flex; border-top: 1px solid var(--border); }
+        .chat-inp {
+            flex-grow: 1; background: transparent; border: none; padding: 12px;
+            color: white; font-size: 0.9rem; margin: 0; text-align: left;
+        }
+        .chat-send { background: var(--surface-2); border: none; color: white; width: 50px; cursor: pointer; }
+
+        /* EXTRAS */
+        .footer { margin-top: auto; text-align: center; padding: 10px; font-size: 0.8rem; color: var(--text-secondary); cursor: pointer; }
         .heart { display: inline-block; transition: transform 0.2s; color: #555; }
         .heart:hover { color: var(--danger); transform: scale(1.2); }
-        .heart:active { transform: scale(0.9); }
-        
         .secret-popup {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.8); padding: 20px 40px; border-radius: 50px;
-            color: white; font-weight: bold; pointer-events: none;
-            opacity: 0; transition: 0.5s; z-index: 999;
+            color: white; font-weight: bold; pointer-events: none; opacity: 0; transition: 0.5s; z-index: 999;
         }
         .secret-popup.show { opacity: 1; }
-
     </style>
 </head>
 <body>
@@ -248,14 +199,14 @@
         </div>
 
         <div class="card" style="border:none; background:transparent; padding:0; box-shadow:none;">
-            <button class="btn btn-primary" onclick="Game.createLobby()">Создать игру</button>
+            <button id="btn-create-lobby" class="btn btn-primary" onclick="Game.createLobby()">Создать игру</button>
             <div style="text-align:center; margin:15px; color:var(--text-secondary); font-size:0.8rem;">или</div>
             <input type="text" id="inp-code" placeholder="Код комнаты (4 символа)" style="margin-bottom:8px;">
-            <button class="btn btn-accent" onclick="Game.joinLobby()">Войти</button>
+            <button id="btn-join-lobby" class="btn btn-accent" onclick="Game.joinLobby()">Войти</button>
         </div>
         
         <div class="footer" onclick="activateSecret()">
-            v6.0 Minimal • <span class="heart">❤️</span>
+            v7.0 Stable • <span class="heart">❤️</span>
         </div>
     </div>
 
@@ -296,8 +247,6 @@
     <!-- 3. GAME -->
     <div id="screen-game" class="screen">
         <div class="role-wrapper">
-            <!-- КНОПКА (Исправлена) -->
-            <!-- ontouchstart и preventDefault важны для телефонов -->
             <div class="reveal-btn" id="reveal-btn"
                  onmousedown="Game.showRole(event)" 
                  onmouseup="Game.hideRole(event)"
@@ -319,7 +268,7 @@
              <button class="btn btn-danger" onclick="alert('Обсудите и выберите шпиона вслух!')">Вызвать голосование</button>
         </div>
 
-        <div class="chat-box" style="height: 150px;">
+        <div class="chat-box">
             <div class="chat-history" id="game-chat"></div>
             <div class="chat-input-area">
                 <input type="text" class="chat-inp" id="game-chat-inp" placeholder="Обсуждение...">
@@ -331,7 +280,6 @@
     </div>
 
     <script>
-        // БАЗА ДАННЫХ
         const DB = {
             dota: ["Pudge", "Invoker", "Juggernaut", "CM", "Techies", "Sniper", "Axe", "SF", "Anti-Mage", "Lion", "Zeus", "Riki", "Roshan"],
             clash: ["P.E.K.K.A", "Hog Rider", "Mega Knight", "Golem", "Giant", "Miner", "Princess", "Wizard", "Valkyrie", "Goblin Barrel"],
@@ -341,13 +289,8 @@
         const Game = {
             peer: null, conn: null, myId: null, myName: '', isHost: false, roomCode: '',
             hostConnections: [],
-            
-            state: {
-                phase: 'menu', players: [], chat: [],
-                settings: { spies: 1, pack: 'mix' }
-            },
+            state: { phase: 'menu', players: [], chat: [], settings: { spies: 1, pack: 'mix' } },
 
-            // --- ИНИЦИАЛИЗАЦИЯ ---
             showScreen: function(id) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 document.getElementById(id).classList.add('active');
@@ -355,22 +298,38 @@
                 if(id === 'screen-game') this.renderChat('game');
             },
 
-            // --- СЕТЬ (PEERJS) ---
+            // --- PEERJS LOGIC ---
             createLobby: function() {
+                const btn = document.getElementById('btn-create-lobby');
+                btn.innerText = "Создание...";
+                btn.disabled = true;
+
+                // Генерация кода и ID
                 this.roomCode = Math.random().toString(36).substr(2, 4).toUpperCase();
-                this.myId = `spy-host-${this.roomCode}-v6`;
+                // Используем v7 префикс для изоляции от старых версий
+                this.myId = `spy-party-v7-${this.roomCode}`;
                 this.isHost = true;
                 this.myName = document.getElementById('inp-nickname').value.trim() || "Admin";
+                
                 this.initPeer();
             },
 
             joinLobby: function() {
+                const btn = document.getElementById('btn-join-lobby');
+                btn.innerText = "Вход...";
+                btn.disabled = true;
+
                 const code = document.getElementById('inp-code').value.trim().toUpperCase();
-                if(code.length !== 4) return alert("Код должен быть 4 символа");
+                if(code.length !== 4) {
+                    btn.innerText = "Войти"; btn.disabled = false;
+                    return alert("Код должен быть 4 символа");
+                }
+                
                 this.roomCode = code;
-                this.myId = `spy-client-${Date.now()}`;
+                this.myId = `spy-player-v7-${Date.now()}`;
                 this.isHost = false;
                 this.myName = document.getElementById('inp-nickname').value.trim() || "Player";
+                
                 this.initPeer();
             },
 
@@ -379,32 +338,54 @@
                 this.peer = new Peer(this.myId);
 
                 this.peer.on('open', (id) => {
+                    console.log('Connected to PeerJS server:', id);
                     if (this.isHost) {
                         this.state.players = [{ id: this.myId, name: this.myName, ready: true }];
                         this.state.phase = 'lobby';
                         this.showScreen('screen-lobby');
                         this.renderLobby();
                     } else {
-                        // Подключение к хосту
-                        this.conn = this.peer.connect(`spy-host-${this.roomCode}-v6`);
+                        // Коннект к хосту
+                        this.conn = this.peer.connect(`spy-party-v7-${this.roomCode}`);
+                        
                         this.conn.on('open', () => {
                             this.conn.send({ type: 'JOIN', id: this.myId, name: this.myName });
                         });
+                        
                         this.conn.on('data', (data) => {
                             if(data.type === 'SYNC') {
                                 this.state = data.state;
                                 this.renderApp();
                             }
                         });
-                        this.conn.on('close', () => { alert("Хост вышел"); location.reload(); });
-                        
+
+                        this.conn.on('close', () => { 
+                            alert("Хост вышел"); location.reload(); 
+                        });
+
+                        // Таймаут если хост не найден
                         setTimeout(() => {
-                            if(!this.conn.open) alert("Не удалось подключиться. Проверь код.");
+                            if(!this.conn.open) {
+                                alert("Лобби не найдено! Проверь код.");
+                                location.reload();
+                            }
                         }, 5000);
                     }
                 });
 
-                this.peer.on('error', err => console.log(err));
+                this.peer.on('error', err => {
+                    console.error(err);
+                    if(this.isHost && err.type === 'unavailable-id') {
+                        // Если ID занят, пробуем сгенерировать новый код
+                        this.peer.destroy();
+                        this.roomCode = Math.random().toString(36).substr(2, 4).toUpperCase();
+                        this.myId = `spy-party-v7-${this.roomCode}`;
+                        this.initPeer(); // Рекурсия
+                    } else {
+                        alert("Ошибка сети: " + err.type);
+                        location.reload();
+                    }
+                });
 
                 if (this.isHost) {
                     this.peer.on('connection', (conn) => {
@@ -420,7 +401,7 @@
                 }
             },
 
-            // --- ЛОГИКА ХОСТА ---
+            // --- HOST DATA HANDLER ---
             handleHostData: function(data) {
                 let update = false;
                 if(data.type === 'JOIN') {
@@ -454,7 +435,7 @@
                 this.broadcast();
             },
 
-            // --- ЛОГИКА ИГРЫ ---
+            // --- GAME ACTIONS ---
             toggleReady: function() {
                 if(this.isHost) return;
                 this.conn.send({ type: 'READY', id: this.myId });
@@ -476,27 +457,23 @@
             },
 
             hostStart: function() {
-                if(this.state.players.length < 3) return alert("Минимум 3 игрока");
+                if(this.state.players.length < 3) return alert("Минимум 3 игрока!");
                 
-                // РАНДОМ (Честный)
                 let indices = this.state.players.map((_, i) => i);
-                // Перемешивание (Fisher-Yates)
+                // Shuffle logic (Fisher-Yates)
                 for (let i = indices.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [indices[i], indices[j]] = [indices[j], indices[i]];
                 }
 
-                // Выбор локации
                 let pool = [];
                 const pack = this.state.settings.pack;
                 if(pack === 'mix') pool = [...DB.dota, ...DB.clash, ...DB.brawl];
                 else pool = DB[pack];
                 const loc = pool[Math.floor(Math.random() * pool.length)];
 
-                // Назначение
                 const spyCount = this.state.settings.spies;
                 this.state.players.forEach((p, idx) => {
-                    // Используем перемешанный индекс для назначения
                     const isSpy = indices.indexOf(idx) < spyCount;
                     p.isSpy = isSpy;
                     p.location = loc;
@@ -513,7 +490,7 @@
                 this.broadcast();
             },
 
-            // --- РЕНДЕР ---
+            // --- RENDERING ---
             renderApp: function() {
                 if(this.state.phase === 'lobby') {
                     this.showScreen('screen-lobby');
@@ -574,8 +551,7 @@
                 const desc = document.getElementById('role-desc');
                 const endBtn = document.getElementById('host-end-btn');
 
-                if(this.isHost) endBtn.style.display = 'block';
-                else endBtn.style.display = 'none';
+                endBtn.style.display = this.isHost ? 'block' : 'none';
 
                 if(me.isSpy) {
                     card.classList.add('spy');
@@ -590,14 +566,10 @@
                 }
             },
 
-            // --- ПОКАЗ РОЛИ (ИСПРАВЛЕНА ЛОГИКА) ---
             showRole: function(e) {
-                // Важно: предотвращаем стандартное поведение (скролл, выделение)
                 if(e.cancelable) e.preventDefault();
-                
                 const card = document.getElementById('role-card');
                 const btn = document.getElementById('reveal-btn');
-                
                 card.style.display = 'block';
                 btn.style.opacity = '0.3';
                 btn.style.transform = 'scale(0.95)';
@@ -605,24 +577,20 @@
 
             hideRole: function(e) {
                 if(e && e.cancelable) e.preventDefault();
-
                 const card = document.getElementById('role-card');
                 const btn = document.getElementById('reveal-btn');
-                
                 card.style.display = 'none';
                 btn.style.opacity = '1';
                 btn.style.transform = 'scale(1)';
             }
         };
 
-        // --- ПАСХАЛКА ---
         function activateSecret() {
             const popup = document.getElementById('secret-popup');
             popup.classList.add('show');
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
             setTimeout(() => popup.classList.remove('show'), 3000);
         }
-
     </script>
 </body>
 </html>
