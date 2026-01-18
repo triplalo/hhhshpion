@@ -3,537 +3,684 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SPY: LINK JOIN</title>
+    <title>DOTA SPY GAME</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <style>
         :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --primary: #3b82f6;
-            --text: #f1f5f9;
-            --text-dim: #94a3b8;
-            --accent: #8b5cf6;
+            --bg: #09090b; /* Very dark slate */
+            --surface: #18181b;
+            --surface-hover: #27272a;
+            --primary: #f59e0b; /* Amber/Dota Gold */
+            --primary-glow: rgba(245, 158, 11, 0.4);
             --danger: #ef4444;
-            --success: #22c55e;
+            --spy-color: #dc2626;
+            --citizen-color: #2563eb;
+            --text: #f4f4f5;
+            --text-dim: #71717a;
+            --border: #3f3f46;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; outline: none; }
-
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; outline: none; user-select: none; }
+        
         body {
-            margin: 0;
-            background-color: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', sans-serif;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            margin: 0; background: var(--bg); color: var(--text);
+            font-family: 'Manrope', sans-serif;
+            height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column;
         }
 
+        /* --- SCREEN MANAGING --- */
         .screen {
-            display: none;
-            flex-direction: column;
-            height: 100%;
-            padding: 20px;
-            max-width: 500px;
-            margin: 0 auto;
-            width: 100%;
+            display: none; height: 100%; flex-direction: column;
+            padding: 20px; max-width: 600px; margin: 0 auto; width: 100%;
         }
         .screen.active { display: flex; }
 
-        h1 { font-weight: 800; font-size: 1.8rem; text-align: center; margin-bottom: 20px; letter-spacing: -1px; }
+        h1 {
+            text-align: center; font-weight: 800; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--primary); text-shadow: 0 0 15px var(--primary-glow);
+            margin-bottom: 30px;
+        }
 
+        /* --- UI CARDS --- */
         .card {
-            background: var(--surface);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255,255,255,0.05);
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; padding: 24px; margin-bottom: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
         }
 
+        .input-group { margin-bottom: 16px; }
+        label { display: block; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 8px; font-weight: 600; letter-spacing: 0.5px;}
+        
         input, select {
-            width: 100%; padding: 14px; background: #0f172a; border: 1px solid #334155;
-            color: white; border-radius: 10px; font-size: 1rem; text-align: center;
-            margin-bottom: 10px; font-family: inherit; transition: 0.2s;
+            width: 100%; padding: 16px; background: #000; border: 1px solid var(--border);
+            color: white; font-family: inherit; font-size: 1rem; border-radius: 12px;
+            text-align: center; transition: 0.2s;
         }
-        input:focus { border-color: var(--primary); }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-glow); }
 
         .btn {
-            width: 100%; padding: 14px; border: none; border-radius: 10px;
-            font-weight: 600; font-size: 1rem; cursor: pointer; margin-bottom: 10px;
-            transition: 0.2s; display: flex; align-items: center; justify-content: center;
+            width: 100%; padding: 16px; border: none; border-radius: 12px;
+            font-weight: 700; font-size: 1rem; cursor: pointer; text-transform: uppercase;
+            transition: all 0.2s; margin-bottom: 12px; display: flex; align-items: center; justify-content: center;
         }
-        .btn:active { transform: scale(0.98); opacity: 0.9; }
-        .btn:disabled { opacity: 0.5; cursor: wait; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger); }
-        .btn-copy { background: var(--accent); color: white; }
+        .btn-primary { background: var(--primary); color: #000; box-shadow: 0 0 15px var(--primary-glow); }
+        .btn-outline { background: transparent; border: 1px solid var(--text-dim); color: var(--text); }
+        .btn-danger { background: rgba(220, 38, 38, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .btn-ghost { background: transparent; color: var(--text-dim); font-size: 0.8rem; }
+        .btn-link { background: var(--surface-hover); color: var(--text); border: 1px solid var(--border); font-size: 0.9rem;}
 
-        /* LOBBY */
-        .room-code {
-            font-size: 2.5rem; font-weight: 800; text-align: center;
-            letter-spacing: 5px; color: var(--primary); margin: 10px 0;
-            cursor: pointer;
+        /* --- LOBBY UI --- */
+        .room-code-display {
+            font-size: 3.5rem; font-weight: 800; text-align: center;
+            letter-spacing: 8px; color: var(--text);
+            font-variant-numeric: tabular-nums;
+            margin: 10px 0;
+            user-select: text;
         }
         
-        .player-list { flex-grow: 1; overflow-y: auto; margin: 10px 0; }
-        .player-item {
+        .player-list { flex: 1; overflow-y: auto; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 10px; border: 1px solid var(--border); }
+        .player-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px;
+            padding: 12px; background: var(--surface); border-radius: 8px;
+            margin-bottom: 8px; transition: 0.2s;
         }
-        .status-ready { color: var(--success); font-size: 0.8rem; font-weight: bold; }
-        .status-wait { color: var(--text-dim); font-size: 0.8rem; }
-
-        /* GAME */
-        .role-area {
-            flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;
-        }
-        .hold-btn {
-            width: 200px; height: 200px; border-radius: 50%;
-            background: var(--surface); border: 2px solid var(--text-dim);
-            display: flex; align-items: center; justify-content: center; text-align: center;
-            font-weight: bold; color: var(--text-dim); cursor: pointer;
-            box-shadow: 0 0 20px rgba(0,0,0,0.2); transition: 0.2s;
-            -webkit-user-select: none; -webkit-touch-callout: none;
-        }
-        .hold-btn:active { transform: scale(0.95); background: #334155; }
+        .player-row.ready { border-left: 3px solid var(--primary); }
         
-        .role-card {
-            display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 260px; background: white; color: black; padding: 30px; border-radius: 20px;
-            text-align: center; z-index: 10; pointer-events: none;
+        .status-pill {
+            font-size: 0.7rem; padding: 4px 8px; border-radius: 20px; font-weight: 700; text-transform: uppercase;
         }
-        .role-card.spy { background: var(--danger); color: white; }
-        .role-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 5px; }
+        .st-wait { background: #27272a; color: #71717a; }
+        .st-ready { background: var(--primary); color: #000; }
 
-        /* CHAT */
-        .chat-box { height: 150px; display: flex; flex-direction: column; background: rgba(0,0,0,0.2); border-radius: 10px; margin-top: 10px; }
-        .chat-history { flex-grow: 1; overflow-y: auto; padding: 10px; font-size: 0.85rem; }
-        .chat-inp-row { display: flex; border-top: 1px solid rgba(255,255,255,0.1); }
-        .chat-inp { flex-grow: 1; background: transparent; border: none; padding: 10px; color: white; text-align: left; }
-        .chat-send { width: 50px; background: var(--surface); border: none; color: var(--primary); font-weight: bold; }
-
-        /* EXTRAS */
-        .status-bar { 
-            position: fixed; bottom: 0; left: 0; width: 100%; 
-            background: #0f172a; padding: 5px; text-align: center; 
-            font-size: 0.7rem; color: #64748b; border-top: 1px solid #334155;
+        /* --- GAME UI --- */
+        .role-wrapper {
+            flex: 1; display: flex; flex-direction: column; 
+            align-items: center; justify-content: center;
         }
-        .secret-trig { position: fixed; bottom: 30px; right: 0; width: 30px; height: 30px; }
+        
+        .role-reveal-btn {
+            width: 240px; height: 240px; border-radius: 50%;
+            background: linear-gradient(145deg, #18181b, #09090b);
+            border: 2px solid var(--border);
+            box-shadow: 20px 20px 60px #050506, -20px -20px 60px #1d1d20;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; color: var(--text-dim); font-weight: 700;
+            transition: 0.1s; cursor: pointer;
+            -webkit-user-select: none;
+        }
+        .role-reveal-btn:active { transform: scale(0.95); background: #000; color: #555; border-color: #222; }
+        
+        .role-content {
+            display: none; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px; padding: 30px; border-radius: 24px;
+            background: #fff; color: #000; text-align: center;
+            pointer-events: none; z-index: 100;
+            box-shadow: 0 0 100px rgba(0,0,0,0.8);
+        }
+        .role-content.spy-mode { background: var(--spy-color); color: #fff; }
+        .role-icon { font-size: 3rem; margin-bottom: 10px; }
+        .role-hero { font-size: 1.8rem; font-weight: 800; line-height: 1.2; margin-bottom: 5px; }
+        .role-sub { font-size: 0.9rem; opacity: 0.8; font-weight: 600; text-transform: uppercase;}
+
+        /* --- CHAT --- */
+        .chat-section {
+            height: 160px; display: flex; flex-direction: column;
+            border-top: 1px solid var(--border); padding-top: 10px;
+        }
+        .chat-history {
+            flex: 1; overflow-y: auto; padding: 5px; font-size: 0.9rem;
+            display: flex; flex-direction: column; gap: 4px;
+        }
+        .msg { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .msg b { color: var(--primary); margin-right: 5px; }
+        
+        .chat-form { display: flex; gap: 8px; margin-top: 10px; }
+        .chat-inp {
+            flex: 1; padding: 12px; border-radius: 8px; 
+            background: #000; border: 1px solid var(--border); color: #fff;
+            text-align: left;
+        }
+        .chat-btn { width: 50px; background: var(--surface-hover); border: none; color: var(--primary); border-radius: 8px; cursor: pointer;}
+
+        /* --- CONNECTION STATUS --- */
+        #conn-status {
+            position: fixed; bottom: 5px; left: 0; width: 100%;
+            text-align: center; font-size: 0.7rem; color: #333;
+            pointer-events: none;
+        }
+        
+        /* Easter Egg */
+        .easter-egg-zone { position: fixed; top: 0; left: 0; width: 20px; height: 20px; z-index: 1000; }
     </style>
 </head>
 <body>
 
-    <!-- STATUS BAR -->
-    <div class="status-bar" id="status-bar">v8.0 • Готов к работе</div>
+    <div id="secret-modal" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#ec4899; font-size:1.5rem; font-weight:bold; opacity:0; pointer-events:none; transition:0.5s;">Я люблю Соню ❤️</div>
+    <div class="easter-egg-zone" onclick="triggerEasterEgg()"></div>
 
     <!-- 1. MENU -->
     <div id="screen-menu" class="screen active">
-        <h1>SPY GAME</h1>
-        
+        <h1>Spy Game</h1>
         <div class="card">
-            <label style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 5px; display: block;">ТВОЕ ИМЯ</label>
-            <input type="text" id="inp-name" placeholder="Введи никнейм">
+            <div class="input-group">
+                <label>НИКНЕЙМ</label>
+                <input type="text" id="nick-inp" placeholder="Твое имя">
+            </div>
             
-            <div style="height: 15px;"></div>
-
-            <button class="btn btn-primary" onclick="Game.createLobby()">СОЗДАТЬ ИГРУ</button>
+            <button class="btn btn-primary" onclick="Net.host()">Создать лобби</button>
             
-            <div style="text-align:center; margin:15px; color:var(--text-dim); font-size:0.8rem;">или</div>
+            <div style="height: 1px; background: var(--border); margin: 20px 0;"></div>
             
-            <input type="text" id="inp-code" placeholder="КОД КОМНАТЫ" style="text-transform:uppercase; letter-spacing:3px;">
-            <button class="btn btn-outline" onclick="Game.joinLobby()">ВОЙТИ ПО КОДУ</button>
+            <div class="input-group">
+                <label>КОД КОМНАТЫ (4 БУКВЫ)</label>
+                <input type="text" id="code-inp" placeholder="XXXX" style="letter-spacing: 5px; text-transform: uppercase;">
+            </div>
+            <button class="btn btn-outline" onclick="Net.join()">Присоединиться</button>
         </div>
-        
-        <div class="secret-trig" onclick="activateSecret()"></div>
+        <p style="text-align:center; color:#333; font-size:0.8rem; margin-top:auto;">v9.0 | No more limits</p>
     </div>
 
     <!-- 2. LOBBY -->
     <div id="screen-lobby" class="screen">
         <div class="card" style="text-align:center;">
-            <div style="font-size:0.8rem; color:var(--text-dim);">КОД КОМНАТЫ</div>
-            <div class="room-code" id="lobby-code">----</div>
-            <button class="btn btn-copy" onclick="Game.copyLink()">🔗 СКОПИРОВАТЬ ССЫЛКУ</button>
+            <label>КОД ДЛЯ ВХОДА</label>
+            <div class="room-code-display" id="lobby-code-display">....</div>
+            <button class="btn btn-link" onclick="Game.copyInvite()">🔗 Скопировать ссылку</button>
+            
+            <div id="host-settings-panel" style="margin-top:15px; display:none;">
+                <label>Настройки шпионов</label>
+                <select id="spy-count" onchange="Game.sendSettings()">
+                    <option value="1">1 Шпион</option>
+                    <option value="2">2 Шпиона</option>
+                    <option value="3">3 Шпиона (Хаос)</option>
+                </select>
+            </div>
         </div>
 
-        <div id="host-panel" style="display:none; margin-bottom:10px; display:flex; gap:5px;">
-             <select id="sel-spies" style="margin:0;" onchange="Game.sendSettings()">
-                 <option value="1">1 Шпион</option>
-                 <option value="2">2 Шпиона</option>
-             </select>
-             <select id="sel-pack" style="margin:0;" onchange="Game.sendSettings()">
-                 <option value="mix">Все игры</option>
-                 <option value="dota">Dota 2</option>
-                 <option value="clash">Clash</option>
-             </select>
+        <label style="padding: 0 4px;">ИГРОКИ ОНЛАЙН</label>
+        <div class="player-list" id="player-list-container">
+            <!-- JS inserts players -->
         </div>
 
-        <div class="player-list" id="lobby-list"></div>
+        <div style="margin-top: 15px;">
+            <button id="btn-ready" class="btn btn-outline" onclick="Game.toggleReady()">ГОТОВ</button>
+            <button id="btn-start" class="btn btn-primary" onclick="Game.startGame()" style="display:none;">НАЧАТЬ РАУНД</button>
+        </div>
 
-        <button id="btn-ready" class="btn btn-outline" onclick="Game.toggleReady()">ГОТОВ</button>
-        <button id="btn-start" class="btn btn-primary" onclick="Game.hostStart()" style="display:none;">НАЧАТЬ</button>
-
-        <div class="chat-box">
-            <div class="chat-history" id="lobby-chat"></div>
-            <div class="chat-inp-row">
-                <input type="text" class="chat-inp" id="lobby-inp" placeholder="Чат...">
-                <button class="chat-send" onclick="Game.chat('lobby')">➤</button>
+        <!-- Chat Area -->
+        <div class="chat-section">
+            <div class="chat-history" id="chat-lobby"></div>
+            <div class="chat-form">
+                <input type="text" class="chat-inp" id="chat-inp-lobby" placeholder="Чат...">
+                <button class="chat-btn" onclick="Game.sendChat('lobby')">➤</button>
             </div>
         </div>
     </div>
 
     <!-- 3. GAME -->
     <div id="screen-game" class="screen">
-        <div class="role-area">
-            <div class="hold-btn" id="reveal-btn"
-                 onmousedown="Game.show(true)" onmouseup="Game.show(false)"
-                 onmouseleave="Game.show(false)"
-                 ontouchstart="Game.show(true)" ontouchend="Game.show(false)">
-                УДЕРЖИВАЙ<br>ЧТОБЫ УВИДЕТЬ<br>РОЛЬ
+        <div class="role-wrapper">
+            <!-- КНОПКА ПОКАЗА (Исправлена механика) -->
+            <div class="role-reveal-btn" id="reveal-btn"
+                onmousedown="Game.reveal(true)" onmouseup="Game.reveal(false)"
+                onmouseleave="Game.reveal(false)"
+                ontouchstart="Game.reveal(true)" ontouchend="Game.reveal(false)"
+                ontouchcancel="Game.reveal(false)">
+                <span style="pointer-events: none;">УДЕРЖИВАЙ<br>ЧТОБЫ<br>УЗНАТЬ РОЛЬ</span>
             </div>
-            
-            <div id="role-card" class="role-card">
-                <div id="r-icon" style="font-size:3rem;"></div>
-                <div id="r-name" class="role-title"></div>
-                <div id="r-desc"></div>
+
+            <!-- Сама роль -->
+            <div id="role-overlay" class="role-content">
+                <div id="role-icon" class="role-icon"></div>
+                <div id="role-text" class="role-hero"></div>
+                <div id="role-sub" class="role-sub"></div>
             </div>
         </div>
 
-        <button class="btn btn-danger" onclick="alert('Голосуйте вслух!')">🚨 ГОЛОСОВАНИЕ</button>
-        <button id="btn-end" class="btn btn-outline" onclick="Game.endGame()" style="display:none;">ЗАВЕРШИТЬ</button>
+        <div class="card">
+             <button class="btn btn-danger" onclick="alert('Обсудите голосом и выберите шпиона!')">🚨 ВЫЗВАТЬ ГОЛОСОВАНИЕ</button>
+             <button id="host-end-btn" class="btn btn-ghost" onclick="Game.endRound()" style="display:none; margin-bottom:0;">Завершить игру (Хост)</button>
+        </div>
 
-        <div class="chat-box" style="height:120px;">
-            <div class="chat-history" id="game-chat"></div>
-            <div class="chat-inp-row">
-                <input type="text" class="chat-inp" id="game-inp" placeholder="Обсуждение...">
-                <button class="chat-send" onclick="Game.chat('game')">➤</button>
+        <!-- Chat Area -->
+        <div class="chat-section" style="height: 120px;">
+            <div class="chat-history" id="chat-game"></div>
+            <div class="chat-form">
+                <input type="text" class="chat-inp" id="chat-inp-game" placeholder="Обсуждение...">
+                <button class="chat-btn" onclick="Game.sendChat('game')">➤</button>
             </div>
         </div>
     </div>
 
+    <div id="conn-status">Ожидание...</div>
+
     <script>
-        const DB = {
-            dota: ["Pudge", "Invoker", "Juggernaut", "CM", "Techies", "Sniper", "Axe", "SF", "Anti-Mage", "Lion", "Zeus", "Riki", "Roshan"],
-            clash: ["P.E.K.K.A", "Hog Rider", "Mega Knight", "Golem", "Giant", "Miner", "Princess", "Wizard", "Valkyrie", "Goblin Barrel"],
-            brawl: ["Shelly", "Colt", "El Primo", "Leon", "Spike", "Crow", "Mortis"]
+        // --- DATA ---
+        // Полный список, который ты просил
+        const DOTA_HEROES = [
+            "Abaddon", "Alchemist", "Ancient Apparition", "Anti-Mage", "Arc Warden", "Axe", "Bane", "Batrider", 
+            "Beastmaster", "Bloodseeker", "Bounty Hunter", "Brewmaster", "Bristleback", "Broodmother", 
+            "Centaur Warrunner", "Chaos Knight", "Chen", "Clinkz", "Clockwerk", "Crystal Maiden", "Dark Seer", 
+            "Dark Willow", "Dawnbreaker", "Dazzle", "Death Prophet", "Disruptor", "Doom", "Dragon Knight", 
+            "Drow Ranger", "Earth Spirit", "Earthshaker", "Elder Titan", "Ember Spirit", "Enchantress", "Enigma", 
+            "Faceless Void", "Grimstroke", "Gyrocopter", "Hoodwink", "Huskar", "Invoker", "Io", "Jakiro", 
+            "Juggernaut", "Keeper of the Light", "Kunkka", "Legion Commander", "Leshrac", "Lich", "Lifestealer", 
+            "Lina", "Lion", "Lone Druid", "Luna", "Lycan", "Magnus", "Marci", "Mars", "Medusa", "Meepo", "Mirana", 
+            "Monkey King", "Morphling", "Muerta", "Naga Siren", "Nature’s Prophet", "Necrophos", "Night Stalker", 
+            "Nyx Assassin", "Ogre Magi", "Omniknight", "Oracle", "Outworld Destroyer", "Pangolier", "Phantom Assassin", 
+            "Phantom Lancer", "Phoenix", "Puck", "Pudge", "Pugna", "Queen of Pain", "Razor", "Riki", "Rubick", 
+            "Sand King", "Shadow Demon", "Shadow Fiend", "Shadow Shaman", "Silencer", "Skywrath Mage", "Slardar", 
+            "Slark", "Snapfire", "Sniper", "Spectre", "Spirit Breaker", "Storm Spirit", "Sven", "Techies", 
+            "Templar Assassin", "Terrorblade", "Tidehunter", "Timbersaw", "Tinker", "Tiny", "Treant Protector", 
+            "Troll Warlord", "Tusk", "Underlord", "Undying", "Ursa", "Vengeful Spirit", "Venomancer", "Viper", 
+            "Visage", "Void Spirit", "Warlock", "Weaver", "Windranger", "Winter Wyvern", "Witch Doctor", 
+            "Wraith King", "Zeus"
+        ];
+
+        // --- GLOBAL APP STATE ---
+        const App = {
+            state: {
+                phase: 'menu',      // menu, lobby, game
+                roomCode: '',
+                players: [],        // Array of {id, name, ready, isSpy, hero, spyStreak}
+                chat: [],
+                config: { spies: 1 }
+            },
+            me: { id: null, name: '', isHost: false },
+            hostData: { 
+                conns: [], // Список подключений для хоста
+                hero: ''   // Текущая локация (герой) для хоста
+            }
         };
 
-        const Game = {
-            peer: null, conn: null, myId: null, roomCode: null, isHost: false, name: '',
-            hostConns: [],
-            state: { phase: 'menu', players: [], chat: [], settings: { spies: 1, pack: 'mix' } },
+        // --- NETWORKING ENGINE ---
+        const Net = {
+            peer: null,
+            conn: null,
 
-            // --- STARTUP ---
-            init: function() {
-                // Проверяем ссылку (если пришли по приглашению)
-                const params = new URLSearchParams(window.location.search);
-                const codeFromUrl = params.get('code');
-                if(codeFromUrl) {
-                    document.getElementById('inp-code').value = codeFromUrl;
-                }
+            log: (txt) => {
+                document.getElementById('conn-status').innerText = txt;
+                console.log("[Net]", txt);
             },
 
-            setStatus: function(msg) {
-                document.getElementById('status-bar').innerText = msg;
-            },
-
-            showScreen: function(id) {
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById(id).classList.add('active');
-            },
-
-            // --- NETWORKING ---
-            createLobby: function() {
-                this.name = document.getElementById('inp-name').value.trim() || "Host";
-                this.roomCode = Math.random().toString(36).substr(2, 4).toUpperCase();
-                // Используем префикс v8 и код комнаты. Если ID занят, PeerJS вернет ошибку.
-                this.myId = `spy-v8-${this.roomCode}`;
-                this.isHost = true;
-                this.startPeer();
-            },
-
-            joinLobby: function() {
-                this.name = document.getElementById('inp-name').value.trim() || "Player";
-                this.roomCode = document.getElementById('inp-code').value.trim().toUpperCase();
-                if(this.roomCode.length !== 4) return alert("Код должен быть 4 символа");
+            // Create Lobby
+            host: function() {
+                App.me.name = document.getElementById('nick-inp').value.trim() || "Host";
+                App.me.isHost = true;
                 
-                // Для клиента генерируем случайный ID
-                this.myId = `spy-client-${Date.now()}`;
-                this.isHost = false;
-                this.startPeer();
+                // Generate a guaranteed unique ID based on a 4-char code
+                const code = this.generateCode();
+                App.state.roomCode = code;
+                
+                // IMPORTANT: PeerID includes the Code
+                const peerId = `spy-game-v9-${code}`; 
+
+                this.log("Creating server: " + code);
+                this.initPeer(peerId);
             },
 
-            startPeer: function() {
-                this.setStatus("Подключение к серверу...");
+            // Join Lobby
+            join: function() {
+                App.me.name = document.getElementById('nick-inp').value.trim() || "Player";
+                App.me.isHost = false;
                 
+                const code = document.getElementById('code-inp').value.trim().toUpperCase();
+                if(code.length !== 4) return alert("Код должен быть из 4 букв");
+
+                // Client ID is random
+                const peerId = `spy-client-${Math.random().toString(36).substr(2, 9)}`;
+                this.initPeer(peerId, code);
+            },
+
+            initPeer: function(id, targetCode = null) {
                 if(this.peer) this.peer.destroy();
-                this.peer = new Peer(this.myId);
+                
+                this.peer = new Peer(id);
 
-                this.peer.on('open', (id) => {
-                    this.setStatus(`Подключено. ID: ${id}`);
-                    if(this.isHost) {
-                        this.state.players = [{ id: this.myId, name: this.name, ready: true }];
-                        this.enterLobby();
+                this.peer.on('open', (myId) => {
+                    App.me.id = myId;
+                    this.log("Online. ID: " + myId);
+
+                    if(App.me.isHost) {
+                        // Init State
+                        App.state.players = [{ 
+                            id: myId, name: App.me.name, ready: true, 
+                            isSpy: false, spyStreak: 0 
+                        }];
+                        Game.enterLobby();
                     } else {
-                        this.connectHost();
+                        // Connect to Host
+                        const hostId = `spy-game-v9-${targetCode}`;
+                        this.connectToHost(hostId);
                     }
                 });
 
                 this.peer.on('error', (err) => {
                     console.error(err);
                     if(err.type === 'unavailable-id') {
-                        // Если мы хост и ID занят -> значит комната уже есть или зависла
-                        if(this.isHost) {
-                            alert("Код комнаты занят. Пробуем другой...");
-                            this.createLobby(); // Рекурсия (пробуем снова)
-                        } else {
-                            this.setStatus("Ошибка ID");
+                        if(App.me.isHost) {
+                            alert("Ошибка генерации комнаты (ID занят). Попробуйте снова.");
+                            location.reload(); // Hard retry
                         }
                     } else if (err.type === 'peer-unavailable') {
-                         alert("Комната не найдена! Проверь код.");
-                         this.setStatus("Комната не найдена");
+                        alert("Комната не найдена. Проверь код.");
+                        this.log("Host not found");
                     } else {
-                        this.setStatus("Ошибка сети: " + err.type);
+                        alert("Network Error: " + err.type);
                     }
                 });
 
-                if(this.isHost) {
-                    this.peer.on('connection', (conn) => {
-                        this.hostConns.push(conn);
-                        conn.on('data', (data) => this.hostHandleData(data));
-                        conn.on('close', () => {
-                            this.hostConns = this.hostConns.filter(c => c !== conn);
-                            this.state.players = this.state.players.filter(p => p.id !== conn.peer);
+                // HOST: Handle incoming connections
+                if(App.me.isHost) {
+                    this.peer.on('connection', (c) => {
+                        App.hostData.conns.push(c);
+                        
+                        c.on('data', (data) => this.handleDataAsHost(data, c.peer));
+                        
+                        c.on('close', () => {
+                            App.hostData.conns = App.hostData.conns.filter(x => x !== c);
+                            App.state.players = App.state.players.filter(p => p.id !== c.peer);
                             this.broadcast();
                         });
-                        conn.on('open', () => conn.send({ type: 'SYNC', state: this.state }));
+
+                        // Sync state immediately
+                        c.on('open', () => c.send({ type: 'SYNC', state: App.state }));
                     });
                 }
             },
 
-            connectHost: function() {
-                const targetId = `spy-v8-${this.roomCode}`;
-                this.setStatus(`Поиск комнаты ${this.roomCode}...`);
-                
-                this.conn = this.peer.connect(targetId);
+            connectToHost: function(hostId) {
+                this.log("Connecting to " + hostId);
+                this.conn = this.peer.connect(hostId);
                 
                 this.conn.on('open', () => {
-                    this.setStatus("Подключено к хосту!");
-                    this.conn.send({ type: 'JOIN', id: this.myId, name: this.name });
+                    this.log("Connected to Host");
+                    this.conn.send({ type: 'JOIN', name: App.me.name });
                 });
 
                 this.conn.on('data', (data) => {
                     if(data.type === 'SYNC') {
-                        this.state = data.state;
-                        this.render();
+                        App.state = data.state;
+                        Game.render();
                     }
                 });
 
                 this.conn.on('close', () => {
-                    alert("Хост отключился"); location.href = location.pathname;
+                    alert("Соединение с хостом потеряно.");
+                    location.reload();
                 });
             },
 
-            // --- HOST LOGIC ---
-            hostHandleData: function(data) {
-                let upd = false;
+            // --- DATA HANDLERS ---
+            
+            // Runs only on HOST
+            handleDataAsHost: function(data, peerId) {
+                let changed = false;
+
                 if(data.type === 'JOIN') {
-                    if(!this.state.players.find(p => p.id === data.id)) {
-                        this.state.players.push({ id: data.id, name: data.name, ready: false });
-                        upd = true;
+                    // Check duplicates
+                    if(!App.state.players.find(p => p.id === peerId)) {
+                        App.state.players.push({
+                            id: peerId, name: data.name, 
+                            ready: false, isSpy: false, spyStreak: 0
+                        });
+                        changed = true;
                     }
                 }
                 if(data.type === 'READY') {
-                    const p = this.state.players.find(p => p.id === data.id);
-                    if(p) { p.ready = !p.ready; upd = true; }
+                    const p = App.state.players.find(x => x.id === peerId);
+                    if(p) { p.ready = !p.ready; changed = true; }
                 }
                 if(data.type === 'CHAT') {
-                    this.state.chat.push(data.msg);
-                    if(this.state.chat.length > 30) this.state.chat.shift();
-                    upd = true;
+                    this.pushChat(data.msg);
+                    changed = true;
                 }
-                if(upd) this.broadcast();
+
+                if(changed) this.broadcast();
             },
 
+            pushChat: function(msg) {
+                App.state.chat.push(msg);
+                if(App.state.chat.length > 50) App.state.chat.shift();
+            },
+
+            // Host sends state to everyone
             broadcast: function() {
-                this.render();
-                this.hostConns.forEach(c => {
-                    if(c.open) c.send({ type: 'SYNC', state: this.state });
+                Game.render(); // update self
+                App.hostData.conns.forEach(c => {
+                    if(c.open) c.send({ type: 'SYNC', state: App.state });
                 });
             },
 
-            sendSettings: function() {
-                if(!this.isHost) return;
-                this.state.settings.spies = document.getElementById('sel-spies').value;
-                this.state.settings.pack = document.getElementById('sel-pack').value;
-                this.broadcast();
-            },
+            generateCode: function() {
+                const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+                let res = "";
+                for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
+                return res;
+            }
+        };
 
-            // --- ACTIONS ---
+        // --- GAME LOGIC ---
+        const Game = {
+            
             enterLobby: function() {
-                this.state.phase = 'lobby';
-                this.showScreen('screen-lobby');
-                this.render();
+                App.state.phase = 'lobby';
+                Net.broadcast(); // Or render if not broadcast needed yet
             },
 
             toggleReady: function() {
-                if(this.isHost) return;
-                this.conn.send({ type: 'READY', id: this.myId });
+                if(App.me.isHost) return;
+                Net.conn.send({ type: 'READY' });
             },
 
-            chat: function(ctx) {
-                const inp = document.getElementById(ctx + '-inp');
-                const txt = inp.value.trim();
-                if(!txt) return;
-                const msg = { name: this.name, text: txt };
+            sendChat: function(ctx) {
+                const el = document.getElementById(`chat-inp-${ctx}`);
+                const text = el.value.trim();
+                if(!text) return;
                 
-                if(this.isHost) {
-                    this.state.chat.push(msg);
-                    this.broadcast();
+                const msg = { name: App.me.name, text: text };
+                
+                if(App.me.isHost) {
+                    Net.pushChat(msg);
+                    Net.broadcast();
                 } else {
-                    this.conn.send({ type: 'CHAT', msg: msg });
+                    Net.conn.send({ type: 'CHAT', msg: msg });
                 }
-                inp.value = '';
+                el.value = '';
+            },
+            
+            sendSettings: function() {
+                if(!App.me.isHost) return;
+                App.state.config.spies = parseInt(document.getElementById('spy-count').value);
+                Net.broadcast();
             },
 
-            hostStart: function() {
-                if(this.state.players.length < 3) return alert("Нужно 3 игрока!");
+            // --- CORE SPY LOGIC WITH ANTI-STREAK ---
+            startGame: function() {
+                const count = App.state.players.length;
+                if(count < 3) return alert("Минимум 3 игрока!");
+
+                // 1. Pick Hero
+                const hero = DOTA_HEROES[Math.floor(Math.random() * DOTA_HEROES.length)];
+
+                // 2. Decide who can be spy (Anti-Streak logic)
+                // Filter players who have spyStreak < 3
+                let candidates = App.state.players.filter(p => p.spyStreak < 3);
                 
-                // Random
-                let idxs = this.state.players.map((_, i) => i);
-                for (let i = idxs.length - 1; i > 0; i--) {
+                // Fallback: if everyone has streaks (unlikely but possible), reset pool to everyone
+                if(candidates.length < App.state.config.spies) {
+                     candidates = [...App.state.players];
+                }
+
+                // 3. Shuffle candidates
+                for (let i = candidates.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
-                    [idxs[i], idxs[j]] = [idxs[j], idxs[i]];
+                    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
                 }
 
-                let pool = [];
-                const pack = this.state.settings.pack;
-                if(pack === 'mix') pool = [...DB.dota, ...DB.clash, ...DB.brawl];
-                else pool = DB[pack];
-                
-                const loc = pool[Math.floor(Math.random() * pool.length)];
-                const spies = this.state.settings.spies;
+                // 4. Select Spies
+                const spiesToPick = App.state.config.spies;
+                const chosenSpyIds = candidates.slice(0, spiesToPick).map(p => p.id);
 
-                this.state.players.forEach((p, i) => {
-                    p.isSpy = idxs.indexOf(i) < spies;
-                    p.location = loc;
-                });
-
-                this.state.phase = 'game';
-                this.state.chat = [];
-                this.broadcast();
-            },
-
-            endGame: function() {
-                this.state.phase = 'lobby';
-                this.state.players.forEach(p => p.ready = false);
-                this.broadcast();
-            },
-
-            copyLink: function() {
-                // Формируем ссылку: текущий URL + ?code=КОД
-                const url = window.location.protocol + "//" + window.location.host + window.location.pathname + "?code=" + this.roomCode;
-                navigator.clipboard.writeText(url).then(() => {
-                    alert("Ссылка скопирована!");
-                });
-            },
-
-            // --- RENDER ---
-            render: function() {
-                if(this.state.phase === 'lobby') {
-                    this.showScreen('screen-lobby');
-                    document.getElementById('lobby-code').innerText = this.roomCode;
-                    
-                    // Host settings visibility
-                    const hostPanel = document.getElementById('host-panel');
-                    const btnStart = document.getElementById('btn-start');
-                    const btnReady = document.getElementById('btn-ready');
-
-                    if(this.isHost) {
-                        hostPanel.style.display = 'flex';
-                        btnStart.style.display = 'block';
-                        btnReady.style.display = 'none';
+                // 5. Update State for all players
+                App.state.players.forEach(p => {
+                    p.hero = hero;
+                    if(chosenSpyIds.includes(p.id)) {
+                        p.isSpy = true;
+                        p.spyStreak += 1; // Increase streak
                     } else {
-                        hostPanel.style.display = 'none';
-                        btnStart.style.display = 'none';
-                        btnReady.style.display = 'block';
+                        p.isSpy = false;
+                        p.spyStreak = 0;  // Reset streak for citizens
+                    }
+                });
+
+                App.state.phase = 'game';
+                App.state.chat = []; // clear chat
+                Net.broadcast();
+            },
+
+            endRound: function() {
+                App.state.phase = 'lobby';
+                App.state.players.forEach(p => p.ready = false);
+                Net.broadcast();
+            },
+
+            copyInvite: function() {
+                const url = window.location.origin + window.location.pathname + '?code=' + App.state.roomCode;
+                navigator.clipboard.writeText(url).then(() => alert("Ссылка скопирована!"));
+            },
+
+            // --- VIEW ---
+            render: function() {
+                // Screen switching
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                
+                if(App.state.phase === 'menu') {
+                    document.getElementById('screen-menu').classList.add('active');
+                    // Check URL for code
+                    const params = new URLSearchParams(location.search);
+                    if(params.has('code')) document.getElementById('code-inp').value = params.get('code');
+                } 
+                else if(App.state.phase === 'lobby') {
+                    document.getElementById('screen-lobby').classList.add('active');
+                    document.getElementById('lobby-code-display').innerText = App.state.roomCode;
+                    
+                    // Host/Client elements
+                    const isHost = App.me.isHost;
+                    document.getElementById('btn-start').style.display = isHost ? 'flex' : 'none';
+                    document.getElementById('host-settings-panel').style.display = isHost ? 'block' : 'none';
+                    
+                    const btnReady = document.getElementById('btn-ready');
+                    if(isHost) {
+                         btnReady.style.display = 'none';
+                    } else {
+                        btnReady.style.display = 'flex';
+                        const me = App.state.players.find(p => p.id === App.me.id);
+                        if(me) {
+                            btnReady.innerText = me.ready ? "Я НЕ ГОТОВ" : "Я ГОТОВ";
+                            btnReady.style.background = me.ready ? 'transparent' : '';
+                            btnReady.style.border = me.ready ? '1px solid #777' : '';
+                        }
                     }
 
-                    // Players
-                    const list = document.getElementById('lobby-list');
+                    // Render List
+                    const list = document.getElementById('player-list-container');
                     list.innerHTML = '';
-                    this.state.players.forEach(p => {
-                        const status = p.ready ? '<span class="status-ready">ГОТОВ</span>' : '<span class="status-wait">ЖДЕТ</span>';
-                        list.innerHTML += `<div class="player-item"><span>${p.name}</span>${status}</div>`;
+                    App.state.players.forEach(p => {
+                        list.innerHTML += `
+                            <div class="player-row ${p.ready ? 'ready' : ''}">
+                                <span>${p.name} ${p.id === App.me.id ? '(Вы)' : ''}</span>
+                                <span class="status-pill ${p.ready ? 'st-ready' : 'st-wait'}">
+                                    ${p.ready ? 'READY' : 'WAIT'}
+                                </span>
+                            </div>
+                        `;
                     });
 
-                    // Self Ready State
-                    const me = this.state.players.find(p => p.id === this.myId);
-                    if(me && !this.isHost) {
-                        btnReady.innerText = me.ready ? "НЕ ГОТОВ" : "ГОТОВ";
-                        btnReady.style.background = me.ready ? "transparent" : "";
-                        btnReady.style.border = me.ready ? "1px solid #94a3b8" : "";
-                    }
-
                     this.renderChat('lobby');
-                } 
-                else if(this.state.phase === 'game') {
-                    this.showScreen('screen-game');
-                    this.renderRole();
+                }
+                else if(App.state.phase === 'game') {
+                    document.getElementById('screen-game').classList.add('active');
+                    this.prepareRoleCard();
+                    document.getElementById('host-end-btn').style.display = App.me.isHost ? 'flex' : 'none';
                     this.renderChat('game');
-                    document.getElementById('btn-end').style.display = this.isHost ? 'block' : 'none';
                 }
             },
 
             renderChat: function(ctx) {
-                const box = document.getElementById(ctx + '-chat');
+                const box = document.getElementById(`chat-${ctx}`);
                 box.innerHTML = '';
-                this.state.chat.forEach(m => {
-                    box.innerHTML += `<div class="chat-msg"><b>${m.name}:</b> ${m.text}</div>`;
+                App.state.chat.forEach(msg => {
+                    box.innerHTML += `<div class="msg"><b>${msg.name}:</b>${msg.text}</div>`;
                 });
                 box.scrollTop = box.scrollHeight;
             },
 
-            renderRole: function() {
-                const me = this.state.players.find(p => p.id === this.myId);
-                const card = document.getElementById('role-card');
-                const icon = document.getElementById('r-icon');
-                const title = document.getElementById('r-name');
-                const desc = document.getElementById('r-desc');
+            prepareRoleCard: function() {
+                const me = App.state.players.find(p => p.id === App.me.id);
+                if(!me) return;
+
+                const card = document.getElementById('role-overlay');
+                const icon = document.getElementById('role-icon');
+                const hero = document.getElementById('role-text');
+                const sub = document.getElementById('role-sub');
 
                 if(me.isSpy) {
-                    card.classList.add('spy');
-                    icon.innerText = "🕵️‍♂️";
-                    title.innerText = "ТЫ ШПИОН";
-                    desc.innerText = "Не выдай себя!";
+                    card.classList.add('spy-mode');
+                    icon.innerText = "😈";
+                    hero.innerText = "ТЫ ШПИОН";
+                    sub.innerText = "Скройся и угадай героя";
                 } else {
-                    card.classList.remove('spy');
+                    card.classList.remove('spy-mode');
                     icon.innerText = "🛡️";
-                    title.innerText = me.location;
-                    desc.innerText = "Мирный житель";
+                    hero.innerText = me.hero; // Тут реальное имя из массива DOTA_HEROES
+                    sub.innerText = "Ты Мирный";
                 }
             },
 
-            show: function(vis) {
-                document.getElementById('role-card').style.display = vis ? 'block' : 'none';
-                document.getElementById('reveal-btn').style.opacity = vis ? '0.2' : '1';
+            // --- REVEAL MECHANIC (HOLD TO SEE) ---
+            reveal: function(show) {
+                const overlay = document.getElementById('role-overlay');
+                const btn = document.getElementById('reveal-btn');
+                
+                if(show) {
+                    overlay.style.display = 'block';
+                    btn.style.opacity = 0.2;
+                } else {
+                    overlay.style.display = 'none';
+                    btn.style.opacity = 1;
+                }
             }
         };
 
-        function activateSecret() {
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.8 } });
-            alert("Я люблю Соню ❤️");
+        // --- EXTRAS ---
+        function triggerEasterEgg() {
+            const el = document.getElementById('secret-modal');
+            el.style.opacity = 1;
+            el.style.zIndex = 9999;
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+            setTimeout(() => { el.style.opacity = 0; el.style.zIndex = -1; }, 2500);
         }
 
-        // Auto init
-        window.onload = () => Game.init();
+        // --- STARTUP ---
+        window.onload = function() {
+            // Check link
+            const url = new URL(window.location.href);
+            if(url.searchParams.has('code')) {
+                document.getElementById('code-inp').value = url.searchParams.get('code');
+            }
+        }
+
     </script>
 </body>
 </html>
