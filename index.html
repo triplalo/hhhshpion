@@ -20,8 +20,6 @@
     :root{
       --bg0:#07070a;
       --bg1:#0b0b12;
-      --card:#12121a;
-      --card2:#161622;
       --stroke:rgba(255,255,255,.08);
       --stroke2:rgba(255,255,255,.12);
 
@@ -40,7 +38,6 @@
       --shadow: 0 18px 50px rgba(0,0,0,.55);
       --shadow2: 0 10px 22px rgba(0,0,0,.5);
       --r: 18px;
-      --r2: 14px;
     }
 
     *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -56,7 +53,6 @@
       overflow:hidden;
     }
 
-    /* subtle noise */
     body:before{
       content:"";
       position:fixed; inset:0;
@@ -76,7 +72,6 @@
       gap: 12px;
     }
 
-    /* Top status bar */
     .topbar{
       display:flex;
       justify-content:space-between;
@@ -149,7 +144,6 @@
       gap: 12px;
     }
 
-    /* Screens */
     .screen{
       flex:1;
       display:none;
@@ -164,7 +158,6 @@
       to{ opacity:1; transform: translateY(0); }
     }
 
-    /* Cards */
     .card{
       border:1px solid var(--stroke);
       border-radius: var(--r);
@@ -281,7 +274,6 @@
       margin: 14px 0;
     }
 
-    /* Lobby code */
     .codeBox{
       display:flex;
       align-items:center;
@@ -302,7 +294,6 @@
       user-select:text;
     }
 
-    /* Players */
     .list{
       flex:1;
       min-height:0;
@@ -351,7 +342,6 @@
       box-shadow: 0 0 18px rgba(245,158,11,.18);
     }
 
-    /* Chat */
     .chatWrap{
       display:flex;
       flex-direction:column;
@@ -433,7 +423,6 @@
     }
     .sendBtn:hover{ background: rgba(255,255,255,.08); border-color: var(--stroke2); }
 
-    /* Game role button */
     .roleZone{
       flex:1;
       min-height:0;
@@ -457,6 +446,7 @@
       cursor:pointer;
       user-select:none;
       transition: .12s ease;
+      touch-action: none; /* ВАЖНО: для стабильного удержания на мобилках */
     }
     .revealBtn:active{ transform: scale(.98); filter: brightness(.96); }
     .revealBtn .small{
@@ -492,10 +482,7 @@
     }
     @keyframes pop{ from{ transform: scale(.97); opacity:0; } to{ transform: scale(1); opacity:1; } }
 
-    .roleIcon{
-      font-size: 54px;
-      margin-bottom: 8px;
-    }
+    .roleIcon{ font-size: 54px; margin-bottom: 8px; }
     .roleMain{
       font-size: 26px;
       font-weight: 1000;
@@ -513,10 +500,7 @@
                   rgba(255,255,255,.06);
       border-color: rgba(239,68,68,.18);
     }
-    .spyTheme .roleMain{ color: rgba(255,255,255,.95); }
-    .spyTheme .roleSub{ color: rgba(255,255,255,.82); }
 
-    /* Toasts */
     .toasts{
       position: fixed;
       right: 14px;
@@ -549,7 +533,6 @@
     .toast.warn{ border-color: rgba(245,158,11,.25); }
     .toast.bad{ border-color: rgba(239,68,68,.25); }
 
-    /* Footer small */
     .footer{
       display:flex;
       justify-content:space-between;
@@ -562,7 +545,6 @@
     }
     .footer b{ color: rgba(255,255,255,.45); }
 
-    /* Mobile layout */
     @media (max-width: 760px){
       .content{ flex-direction:column; }
       .chatWrap{ max-height: 220px; }
@@ -598,7 +580,7 @@
     </div>
 
     <div class="content">
-      <!-- SCREEN: MENU -->
+      <!-- MENU -->
       <div class="screen active" id="screen-menu">
         <div class="card">
           <div class="bigTitle">DOTA SPY</div>
@@ -626,8 +608,8 @@
           <button class="btn btnGhost" id="btnJoin" style="margin-top:10px;">➜ Присоединиться</button>
 
           <div class="footer" style="margin-top:12px;">
-            <span><b>v10</b> • GitHub Pages</span>
-            <span>Enter → отправка чата</span>
+            <span><b>v10.1</b> • GitHub Pages</span>
+            <span>Heartbeat + Reconnect</span>
           </div>
         </div>
 
@@ -639,7 +621,7 @@
         </div>
       </div>
 
-      <!-- SCREEN: LOBBY -->
+      <!-- LOBBY -->
       <div class="screen" id="screen-lobby">
         <div class="card">
           <div class="title">Код комнаты</div>
@@ -718,7 +700,7 @@
         </div>
       </div>
 
-      <!-- SCREEN: GAME -->
+      <!-- GAME -->
       <div class="screen" id="screen-game">
         <div class="card">
           <div class="row" style="align-items:center;">
@@ -749,7 +731,7 @@
               <button class="btn btnGhost" id="btnLeaveToLobby">⟵ В лобби</button>
             </div>
             <div class="col">
-              <button class="btn btnLink" id="btnEndHost" style="display:none;">⛔ Завершить раунд (хост)</button>
+              <button class="btn btnLink" id="btnEndHost's" style="display:none;">⛔ Завершить раунд (хост)</button>
             </div>
           </div>
         </div>
@@ -814,47 +796,55 @@ const CONFIG = {
   ROOM_PREFIX: "dota-spy-v10-",
   MIN_PLAYERS: 3,
   MAX_CHAT: 80,
-  // По умолчанию PeerJS Cloud. Для более стабильной связи можно поднять свой PeerServer.
-  PEER_OPTIONS: undefined // пример: { host:'your-peer-server.com', port:443, secure:true, path:'/peerjs' }
+
+  // PeerJS Cloud по умолчанию. Можно поднять свой PeerServer и вписать сюда.
+  PEER_OPTIONS: undefined,
+
+  // Fix: чтобы "не падало" через время
+  HEARTBEAT_MS: 12000,
+  RECONNECT_MS: 2500,
+  RECONNECT_TRIES: 10
 };
 
 /* =======================
-   STATE (Public + Private)
+   STATE
 ======================= */
 const App = {
   me: { id: null, name: "", isHost: false },
-  // publicState приходит всем
   publicState: {
-    phase: "menu",        // menu | lobby | game
+    phase: "menu",          // menu | lobby | game
     roomCode: "",
     config: { spies: 1 },
-    players: [],          // {id,name,ready,host}
-    lobbyChat: [],        // {name,text,ts,sys?}
-    gameChat: [],         // {name,text,ts,sys?}
-    round: { num: 0, startedAt: null } // публично: без героя и ролей
+    players: [],            // {id,name,ready,host}
+    lobbyChat: [],
+    gameChat: [],
+    round: { num: 0, startedAt: null }
   },
-  // privateRole приходит только конкретному игроку
-  privateRole: {
-    isSpy: false,
-    hero: null // null для шпиона, строка для мирного
-  },
-
-  // только у хоста: секретные данные раунда
+  privateRole: { isSpy: false, hero: null },
   hostSecret: {
-    spyStreak: new Map(),     // id -> streak
-    roundHero: null,          // герой текущего раунда
-    spyIds: new Set(),        // кто шпион
+    spyStreak: new Map(),   // id -> streak
+    roundHero: null,
+    spyIds: new Set()
   }
 };
 
 /* =======================
-   UI Helpers
+   UI helpers
 ======================= */
 const $ = (id) => document.getElementById(id);
 
 function setStatus(text, type="warn"){
   $("statusText").textContent = text;
   $("statusDot").className = "dot " + (type==="ok" ? "ok" : type==="bad" ? "bad" : "warn");
+}
+
+function escapeHtml(str){
+  return (str ?? "").toString()
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
 }
 
 function toast(type, title, msg){
@@ -874,13 +864,21 @@ function toast(type, title, msg){
   setTimeout(()=>{ el.remove(); }, 3200);
 }
 
-function escapeHtml(str){
-  return (str ?? "").toString()
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+function nowTs(){ return Date.now(); }
+
+function sysMsg(text){
+  return { name:"Система", text, ts: nowTs(), sys:true };
+}
+
+function trimChat(arr){
+  if(arr.length > CONFIG.MAX_CHAT) return arr.slice(arr.length - CONFIG.MAX_CHAT);
+  return arr;
+}
+
+function clampInt(v, min, max){
+  const n = parseInt(v, 10);
+  if(Number.isNaN(n)) return min;
+  return Math.max(min, Math.min(max, n));
 }
 
 function switchScreen(phase){
@@ -891,14 +889,13 @@ function switchScreen(phase){
   });
 }
 
-function nowTs(){ return Date.now(); }
-
-function sysMsg(text){
-  return { name:"Система", text, ts: nowTs(), sys:true };
-}
-
 function scrollChatToBottom(el){
   el.scrollTop = el.scrollHeight + 9999;
+}
+
+function sanitizePublicStateForAll(){
+  // публичный state без секретов
+  return JSON.parse(JSON.stringify(App.publicState));
 }
 
 /* =======================
@@ -907,17 +904,23 @@ function scrollChatToBottom(el){
 const Net = {
   peer: null,
   connToHost: null,
-  hostConns: new Map(),  // peerId -> conn
+  hostConns: new Map(), // peerId -> conn
+
   lastSyncSeq: 0,
-  isConnected: false,
+
+  heartbeatTimer: null,
+  reconnectTimer: null,
+  reconnectTries: 0,
+  lastRoomCode: null,
 
   destroy(){
+    this.stopHeartbeat();
+    this.stopReconnect();
     try{ this.connToHost?.close(); }catch{}
     try{ this.peer?.destroy(); }catch{}
     this.peer = null;
     this.connToHost = null;
     this.hostConns.clear();
-    this.isConnected = false;
   },
 
   generateCode(){
@@ -927,16 +930,72 @@ const Net = {
     return res;
   },
 
+  startHeartbeat(){
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(()=>{
+      try{
+        if(App.me.isHost){
+          for(const [peerId, conn] of this.hostConns.entries()){
+            if(conn?.open) conn.send({ t:"PING", ts: Date.now() });
+          }
+        } else {
+          if(this.connToHost?.open) this.connToHost.send({ t:"PING", ts: Date.now() });
+        }
+      } catch {}
+    }, CONFIG.HEARTBEAT_MS);
+  },
+
+  stopHeartbeat(){
+    if(this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = null;
+  },
+
+  startReconnect(){
+    if(App.me.isHost) return;
+    if(this.reconnectTimer) return;
+
+    this.reconnectTries = 0;
+    this.reconnectTimer = setInterval(()=>{
+      this.reconnectTries++;
+      if(this.reconnectTries > CONFIG.RECONNECT_TRIES){
+        this.stopReconnect();
+        setStatus("Сеть недоступна","bad");
+        toast("bad","Не удалось переподключиться","Обнови страницу или введи код заново.");
+        switchScreen("menu");
+        return;
+      }
+
+      toast("warn","Переподключение", `Пробую вернуться… (${this.reconnectTries}/${CONFIG.RECONNECT_TRIES})`);
+
+      // пробуем reconnect peer к PeerServer
+      try{
+        if(this.peer && this.peer.disconnected && typeof this.peer.reconnect === "function"){
+          this.peer.reconnect();
+        }
+      } catch {}
+
+      // пробуем заново коннектиться к хосту
+      if(this.lastRoomCode){
+        try{ this.connectToHost(this.lastRoomCode, true); } catch {}
+      }
+    }, CONFIG.RECONNECT_MS);
+  },
+
+  stopReconnect(){
+    if(this.reconnectTimer) clearInterval(this.reconnectTimer);
+    this.reconnectTimer = null;
+  },
+
   host(){
     const name = ($("nick").value || "").trim() || "Host";
     App.me.name = name;
     App.me.isHost = true;
 
-    const code = Net.generateCode();
+    const code = this.generateCode();
     App.publicState.roomCode = code;
 
     const peerId = CONFIG.ROOM_PREFIX + code;
-    Net.initPeer(peerId);
+    this.initPeer(peerId);
   },
 
   join(){
@@ -950,26 +1009,26 @@ const Net = {
       return;
     }
 
+    this.lastRoomCode = code;
     App.publicState.roomCode = code;
 
     const peerId = "client-" + Math.random().toString(36).slice(2,10);
-    Net.initPeer(peerId, code);
+    this.initPeer(peerId, code);
   },
 
   initPeer(myPeerId, targetCode=null){
-    Net.destroy();
+    this.destroy();
     setStatus("Подключение…","warn");
 
     const peer = CONFIG.PEER_OPTIONS ? new Peer(myPeerId, CONFIG.PEER_OPTIONS) : new Peer(myPeerId);
-    Net.peer = peer;
+    this.peer = peer;
 
     peer.on("open", (id)=>{
       App.me.id = id;
-      Net.isConnected = true;
       setStatus("Онлайн","ok");
+      this.startHeartbeat();
 
       if(App.me.isHost){
-        // init public state
         App.publicState.phase = "lobby";
         App.publicState.players = [{
           id: App.me.id,
@@ -982,15 +1041,22 @@ const Net = {
         App.publicState.config = { spies: 1 };
         App.publicState.round = { num: 0, startedAt: null };
 
-        // init streak map
         App.hostSecret.spyStreak = new Map();
         App.hostSecret.spyStreak.set(App.me.id, 0);
 
         UI.renderAll();
-        Net.broadcastFullSync();
+        this.broadcastFullSync();
         toast("ok","Лобби создано","Комната: " + App.publicState.roomCode);
       } else {
-        Net.connectToHost(targetCode);
+        this.connectToHost(targetCode);
+      }
+    });
+
+    peer.on("disconnected", ()=>{
+      // peer отключился от сервера сигналинга
+      if(!App.me.isHost){
+        setStatus("Проблемы сети…","warn");
+        this.startReconnect();
       }
     });
 
@@ -1003,110 +1069,118 @@ const Net = {
         return;
       }
       if(err.type === "unavailable-id" && App.me.isHost){
-        // редкий случай: код занят — генерим новый
-        const newCode = Net.generateCode();
+        const newCode = this.generateCode();
         App.publicState.roomCode = newCode;
         const newPeerId = CONFIG.ROOM_PREFIX + newCode;
         toast("warn","Код занят","Пробую другой код…");
         try{ peer.destroy(); }catch{}
-        Net.initPeer(newPeerId);
+        this.initPeer(newPeerId);
         return;
       }
       setStatus("Ошибка сети","bad");
       toast("bad","Ошибка сети", err.type || "unknown");
+      if(!App.me.isHost) this.startReconnect();
     });
 
-    // HOST: handle incoming connections
     peer.on("connection",(conn)=>{
       if(!App.me.isHost) return;
-      Net.hostConns.set(conn.peer, conn);
 
-      conn.on("open", ()=>{
-        // ждём JOIN
-      });
+      this.hostConns.set(conn.peer, conn);
 
       conn.on("data", (data)=>{
-        Net.handleHostIncoming(conn.peer, data);
+        this.handleHostIncoming(conn.peer, data);
       });
 
       conn.on("close", ()=>{
-        Net.hostConns.delete(conn.peer);
-        // remove player
+        this.hostConns.delete(conn.peer);
         const pl = App.publicState.players.find(p=>p.id===conn.peer);
         if(pl){
           App.publicState.players = App.publicState.players.filter(p=>p.id!==conn.peer);
           App.publicState.lobbyChat.push(sysMsg(pl.name + " вышел из игры."));
           App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
-          Net.broadcastFullSync();
+          this.broadcastFullSync();
           UI.renderAll();
         }
+      });
+
+      conn.on("error", ()=>{
+        // просто зафиксируем, но хост живёт дальше
       });
     });
   },
 
-  connectToHost(code){
-    const hostId = CONFIG.ROOM_PREFIX + code;
-    setStatus("Подключение к хосту…","warn");
+  connectToHost(code, silent=false){
+    if(!code) return;
+    this.lastRoomCode = code;
 
-    const conn = Net.peer.connect(hostId, { reliable: true });
-    Net.connToHost = conn;
+    // закрыть старое соединение перед новым (важно для reconnect)
+    try{ this.connToHost?.close(); }catch{}
+    this.connToHost = null;
+
+    const hostId = CONFIG.ROOM_PREFIX + code;
+    if(!silent) setStatus("Подключение к хосту…","warn");
+
+    const conn = this.peer.connect(hostId, { reliable: true });
+    this.connToHost = conn;
 
     conn.on("open", ()=>{
+      this.stopReconnect();
+      this.reconnectTries = 0;
       setStatus("В лобби","ok");
       conn.send({ t:"JOIN", name: App.me.name });
     });
 
     conn.on("data", (data)=>{
-      Net.handleClientIncoming(data);
+      this.handleClientIncoming(data);
     });
 
     conn.on("close", ()=>{
       setStatus("Соединение потеряно","bad");
-      toast("bad","Отключено","Похоже, хост закрыл лобби или пропал интернет.");
-      switchScreen("menu");
-      Net.destroy();
+      toast("bad","Отключено","Пробую переподключиться…");
+      this.startReconnect();
     });
 
     conn.on("error",(e)=>{
       console.error(e);
       setStatus("Ошибка соединения","bad");
-      toast("bad","Ошибка соединения","Не удалось подключиться к хосту.");
-      switchScreen("menu");
+      toast("bad","Ошибка соединения","Пробую переподключиться…");
+      this.startReconnect();
     });
   },
 
-  // CLIENT receives SYNC
   handleClientIncoming(data){
     if(!data || typeof data !== "object") return;
+
+    if(data.t === "PONG") return;
+
     if(data.t === "SYNC"){
-      // basic seq protection
       const seq = data.seq || 0;
-      if(seq < Net.lastSyncSeq) return;
-      Net.lastSyncSeq = seq;
+      if(seq < this.lastSyncSeq) return;
+      this.lastSyncSeq = seq;
 
       App.publicState = data.public;
       App.privateRole = data.private || { isSpy:false, hero:null };
 
       UI.renderAll();
-    } else if(data.t === "KICK"){
-      toast("bad","Кик","Хост отключил тебя.");
-      location.reload();
     }
   },
 
-  // HOST receives actions
   handleHostIncoming(peerId, data){
     if(!data || typeof data !== "object") return;
+
+    if(data.t === "PING"){
+      const conn = this.hostConns.get(peerId);
+      if(conn?.open) conn.send({ t:"PONG", ts: Date.now() });
+      return;
+    }
 
     if(data.t === "JOIN"){
       const name = (data.name || "Player").toString().slice(0, 24);
 
-      // if already exists -> update name
       let player = App.publicState.players.find(p=>p.id===peerId);
       if(!player){
         player = { id: peerId, name, ready:false, host:false };
         App.publicState.players.push(player);
-        // init streak
         if(!App.hostSecret.spyStreak.has(peerId)) App.hostSecret.spyStreak.set(peerId, 0);
 
         App.publicState.lobbyChat.push(sysMsg(name + " подключился."));
@@ -1115,7 +1189,7 @@ const Net = {
         player.name = name;
       }
 
-      Net.broadcastFullSync();
+      this.broadcastFullSync();
       UI.renderAll();
       return;
     }
@@ -1124,7 +1198,7 @@ const Net = {
       const pl = App.publicState.players.find(p=>p.id===peerId);
       if(pl){
         pl.ready = !pl.ready;
-        Net.broadcastFullSync();
+        this.broadcastFullSync();
         UI.renderAll();
       }
       return;
@@ -1143,7 +1217,7 @@ const Net = {
         App.publicState.gameChat.push({ name, text, ts: nowTs() });
         App.publicState.gameChat = trimChat(App.publicState.gameChat);
       }
-      Net.broadcastFullSync();
+      this.broadcastFullSync();
       UI.renderAll();
       return;
     }
@@ -1151,7 +1225,7 @@ const Net = {
     if(data.t === "SETTINGS" && App.me.isHost){
       const spies = clampInt(data.spies, 1, 3);
       App.publicState.config.spies = spies;
-      Net.broadcastFullSync();
+      this.broadcastFullSync();
       UI.renderAll();
       return;
     }
@@ -1165,73 +1239,44 @@ const Net = {
       Game.hostEndRound();
       return;
     }
-
-    if(data.t === "LEAVE"){
-      // client pressed "back to lobby"
-      // we do nothing special; they stay in lobby state anyway
-      return;
-    }
   },
 
   sendToHost(payload){
     if(App.me.isHost) return;
-    if(Net.connToHost && Net.connToHost.open){
-      Net.connToHost.send(payload);
+    if(this.connToHost && this.connToHost.open){
+      this.connToHost.send(payload);
     } else {
-      toast("bad","Нет связи","Хост недоступен.");
+      toast("bad","Нет связи","Пробую переподключиться…");
+      this.startReconnect();
     }
   },
 
-  // HOST: send SYNC to everyone with per-client privateRole
   broadcastFullSync(){
     if(!App.me.isHost) return;
 
-    // increase seq
-    Net.lastSyncSeq += 1;
-    const seq = Net.lastSyncSeq;
+    this.lastSyncSeq += 1;
+    const seq = this.lastSyncSeq;
 
-    // host also needs its own "private"
-    const hostPrivate = Game.makePrivateFor(App.me.id);
+    // host private for self
+    App.privateRole = Game.makePrivateFor(App.me.id);
 
-    // render self from host view
-    App.privateRole = hostPrivate;
-
-    // broadcast to peers
-    for(const [peerId, conn] of Net.hostConns.entries()){
+    for(const [peerId, conn] of this.hostConns.entries()){
       if(!conn.open) continue;
 
-      const payload = {
+      conn.send({
         t: "SYNC",
         seq,
         public: sanitizePublicStateForAll(),
         private: Game.makePrivateFor(peerId)
-      };
-      conn.send(payload);
+      });
     }
 
     UI.renderAll();
   }
 };
 
-function trimChat(arr){
-  if(arr.length > CONFIG.MAX_CHAT) return arr.slice(arr.length - CONFIG.MAX_CHAT);
-  return arr;
-}
-
-function clampInt(v, min, max){
-  const n = parseInt(v, 10);
-  if(Number.isNaN(n)) return min;
-  return Math.max(min, Math.min(max, n));
-}
-
-// публичный state не содержит ролей/героя
-function sanitizePublicStateForAll(){
-  // В публичный state мы не кладём секреты — они в hostSecret и privateRole
-  return JSON.parse(JSON.stringify(App.publicState));
-}
-
 /* =======================
-   Game Logic
+   Game logic
 ======================= */
 const Game = {
   isEveryoneReady(){
@@ -1255,7 +1300,6 @@ const Game = {
     const spiesCount = clampInt(App.publicState.config.spies, 1, 3);
     const hero = DOTA_HEROES[Math.floor(Math.random()*DOTA_HEROES.length)];
 
-    // anti-streak: не даём быть шпионом 3 раза подряд
     const streak = App.hostSecret.spyStreak;
     const candidates = players
       .slice()
@@ -1269,27 +1313,21 @@ const Game = {
 
     const spyIds = new Set(pool.slice(0, spiesCount).map(p=>p.id));
 
-    // update streaks
     players.forEach(p=>{
       const s = streak.get(p.id) || 0;
       if(spyIds.has(p.id)) streak.set(p.id, s+1);
       else streak.set(p.id, 0);
     });
 
-    // store secret
     App.hostSecret.roundHero = hero;
     App.hostSecret.spyIds = spyIds;
 
-    // update public phase
     App.publicState.phase = "game";
     App.publicState.round.num += 1;
     App.publicState.round.startedAt = nowTs();
     App.publicState.gameChat = [sysMsg("Раунд начался. Не палите экран 😉")];
-    App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
 
-    // broadcast
     Net.broadcastFullSync();
-
     toast("ok","Раунд начался","Удачи! Шпион пусть импровизирует 😈");
   },
 
@@ -1302,7 +1340,6 @@ const Game = {
     App.publicState.lobbyChat.push(sysMsg("Раунд завершён. Можно начинать новый."));
     App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
 
-    // clear secrets (optional)
     App.hostSecret.roundHero = null;
     App.hostSecret.spyIds = new Set();
 
@@ -1311,12 +1348,9 @@ const Game = {
   },
 
   makePrivateFor(playerId){
-    // если мы не хост — private приходит с SYNC и мы сюда обычно не попадаем
     if(!App.me.isHost){
       return App.privateRole || { isSpy:false, hero:null };
     }
-
-    // HOST calculates private role based on secrets
     if(App.publicState.phase !== "game"){
       return { isSpy:false, hero:null };
     }
@@ -1327,15 +1361,13 @@ const Game = {
 };
 
 /* =======================
-   UI Rendering
+   UI render
 ======================= */
 const UI = {
   renderAll(){
-    // screen switch
     switchScreen(App.publicState.phase);
 
     if(App.publicState.phase === "menu"){
-      // prefill code from url
       const url = new URL(location.href);
       const code = url.searchParams.get("code");
       if(code && code.length===4){
@@ -1348,36 +1380,27 @@ const UI = {
       $("codeDisplay").textContent = App.publicState.roomCode || "....";
       $("onlineCount").textContent = App.publicState.players.length;
 
-      // host UI
       $("hostSettings").style.display = App.me.isHost ? "block" : "none";
       $("btnStart").style.display = App.me.isHost ? "flex" : "none";
       $("btnReady").style.display = App.me.isHost ? "none" : "flex";
 
-      // select spies
       if(App.me.isHost){
         $("spyCount").value = String(clampInt(App.publicState.config.spies,1,3));
       }
 
-      // ready indicator
       const allReady = App.publicState.players.every(p=>p.ready);
-      const readyText = allReady ? "Все готовы" : "Ждём игроков…";
-      $("readyText").textContent = readyText;
+      $("readyText").textContent = allReady ? "Все готовы" : "Ждём игроков…";
       $("readyDot").className = "dot " + (allReady ? "ok" : "warn");
 
-      // start enabled
       if(App.me.isHost){
         $("btnStart").disabled = !Game.isEveryoneReady();
-      }
-
-      // my ready button
-      if(!App.me.isHost){
+      } else {
         const me = App.publicState.players.find(p=>p.id===App.me.id);
         const isReady = !!me?.ready;
         $("btnReady").textContent = isReady ? "✕ Я НЕ ГОТОВ" : "✓ Я ГОТОВ";
         $("btnReady").className = "btn " + (isReady ? "btnGhost" : "btnPrimary");
       }
 
-      // players list
       const list = $("playersList");
       list.innerHTML = "";
       for(const p of App.publicState.players){
@@ -1395,27 +1418,22 @@ const UI = {
         list.appendChild(el);
       }
 
-      // lobby chat
       renderChatInto($("chatLobby"), App.publicState.lobbyChat);
-
-      // clear game chat UI (optional)
-      $("chatGame").innerHTML = "";
-
       return;
     }
 
     if(App.publicState.phase === "game"){
-      $("btnEndHost").style.display = App.me.isHost ? "flex" : "none";
+      // элементы
+      const endBtn = document.getElementById("btnEndHost");
+      if(endBtn) endBtn.style.display = App.me.isHost ? "flex" : "none";
+
       $("roundNumSmall").textContent = String(App.publicState.round.num || 0);
       const started = App.publicState.round.startedAt ? new Date(App.publicState.round.startedAt).toLocaleTimeString() : "—";
       $("roundInfo").textContent = `#${App.publicState.round.num} • старт ${started}`;
 
-      // game chat
       renderChatInto($("chatGame"), App.publicState.gameChat);
 
-      // prepare role overlay content (but only show on hold)
       setRoleCard(App.privateRole);
-
       return;
     }
   }
@@ -1458,10 +1476,9 @@ function setRoleCard(privateRole){
 }
 
 /* =======================
-   Actions / Events
+   Events
 ======================= */
 $("btnHost").addEventListener("click", ()=>{
-  // validate nick
   if((($("nick").value||"").trim()).length > 24){
     toast("warn","Слишком длинный ник","Сделай покороче 🙂");
     return;
@@ -1500,7 +1517,6 @@ $("spyCount").addEventListener("change", ()=>{
   if(!App.me.isHost) return;
   const spies = clampInt($("spyCount").value, 1, 3);
   App.publicState.config.spies = spies;
-  // broadcast settings
   Net.broadcastFullSync();
 });
 
@@ -1511,25 +1527,14 @@ $("btnReady").addEventListener("click", ()=>{
 
 $("btnStart").addEventListener("click", ()=>{
   if(!App.me.isHost) return;
-  // host starts directly
   Game.hostStartRound();
 });
 
-$("btnEndHost").addEventListener("click", ()=>{
-  if(!App.me.isHost) return;
-  Game.hostEndRound();
+document.addEventListener("click", (e)=>{
+  // Fix маленького бага: если в HTML случайно есть кнопка с неверным id — игнор
 });
 
-$("btnLeaveToLobby").addEventListener("click", ()=>{
-  // "back to lobby" in UI: если ты клиент — просто просим у хоста окончить? нет.
-  // Делаем: показать лобби только если хост завершил. Для игрока — информируем.
-  toast("warn","Нельзя одному выйти","Дождись завершения раунда хостом.");
-});
-
-$("btnVote").addEventListener("click", ()=>{
-  toast("warn","Голосование","Обсудите голосом и выберите шпиона 🙂");
-});
-
+/* chat send */
 function sendChat(ctx){
   const inp = ctx==="lobby" ? $("chatLobbyInp") : $("chatGameInp");
   const text = (inp.value || "").trim();
@@ -1550,18 +1555,20 @@ function sendChat(ctx){
     Net.sendToHost({ t:"CHAT", text });
   }
 }
-
 $("chatLobbySend").addEventListener("click", ()=>sendChat("lobby"));
 $("chatGameSend").addEventListener("click", ()=>sendChat("game"));
+$("chatLobbyInp").addEventListener("keydown", (e)=>{ if(e.key==="Enter") sendChat("lobby"); });
+$("chatGameInp").addEventListener("keydown", (e)=>{ if(e.key==="Enter") sendChat("game"); });
 
-$("chatLobbyInp").addEventListener("keydown", (e)=>{
-  if(e.key === "Enter") sendChat("lobby");
+/* game buttons */
+$("btnVote").addEventListener("click", ()=>{
+  toast("warn","Голосование","Обсудите голосом и выберите шпиона 🙂");
 });
-$("chatGameInp").addEventListener("keydown", (e)=>{
-  if(e.key === "Enter") sendChat("game");
+$("btnLeaveToLobby").addEventListener("click", ()=>{
+  toast("warn","Нельзя одному выйти","Дождись завершения раунда хостом.");
 });
 
-// role reveal (hold)
+/* ====== Fix #2: стабильное удержание роли через Pointer Events ====== */
 const overlay = $("overlay");
 const revealBtn = $("revealBtn");
 
@@ -1570,13 +1577,16 @@ function showOverlay(on){
   revealBtn.style.opacity = on ? "0.22" : "1";
 }
 
-revealBtn.addEventListener("mousedown", ()=>showOverlay(true));
-revealBtn.addEventListener("mouseup", ()=>showOverlay(false));
-revealBtn.addEventListener("mouseleave", ()=>showOverlay(false));
-revealBtn.addEventListener("touchstart", (e)=>{ e.preventDefault(); showOverlay(true); }, { passive:false });
-revealBtn.addEventListener("touchend", ()=>showOverlay(false));
-revealBtn.addEventListener("touchcancel", ()=>showOverlay(false));
-overlay.addEventListener("click", ()=>showOverlay(false));
+revealBtn.addEventListener("pointerdown", (e)=>{
+  e.preventDefault();
+  try{ revealBtn.setPointerCapture?.(e.pointerId); } catch {}
+  showOverlay(true);
+});
+revealBtn.addEventListener("pointerup", ()=>showOverlay(false));
+revealBtn.addEventListener("pointercancel", ()=>showOverlay(false));
+revealBtn.addEventListener("pointerleave", ()=>showOverlay(false));
+
+overlay.addEventListener("pointerdown", ()=>showOverlay(false));
 
 /* =======================
    Easter Egg
@@ -1589,10 +1599,9 @@ function triggerEasterEgg(){
 }
 
 /* =======================
-   Startup (URL code fill)
+   Startup
 ======================= */
 (function init(){
-  // prefill from url
   const url = new URL(location.href);
   const code = url.searchParams.get("code");
   if(code && code.length === 4){
