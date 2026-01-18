@@ -3,492 +3,1604 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>DOTA SPY GAME (Improved)</title>
-  <!-- Подключение шрифта и библиотек PeerJS и confetti -->
-  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+  <title>DOTA SPY GAME</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- PeerJS (P2P) -->
   <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+  <!-- Confetti -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
   <style>
-    /* ... стили остаются прежними ... */
-    /* (Опущено для краткости, стили не изменялись) */
+    :root{
+      --bg0:#07070a;
+      --bg1:#0b0b12;
+      --card:#12121a;
+      --card2:#161622;
+      --stroke:rgba(255,255,255,.08);
+      --stroke2:rgba(255,255,255,.12);
+
+      --text:#f6f6fb;
+      --muted:rgba(255,255,255,.64);
+      --muted2:rgba(255,255,255,.44);
+
+      --gold:#f59e0b;
+      --gold2:#ffcc66;
+      --glow:rgba(245,158,11,.35);
+
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --blue:#60a5fa;
+
+      --shadow: 0 18px 50px rgba(0,0,0,.55);
+      --shadow2: 0 10px 22px rgba(0,0,0,.5);
+      --r: 18px;
+      --r2: 14px;
+    }
+
+    *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family:"Manrope", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(245,158,11,.10), transparent 55%),
+                  radial-gradient(900px 500px at 100% 30%, rgba(96,165,250,.08), transparent 55%),
+                  radial-gradient(900px 700px at 10% 100%, rgba(34,197,94,.05), transparent 60%),
+                  linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow:hidden;
+    }
+
+    /* subtle noise */
+    body:before{
+      content:"";
+      position:fixed; inset:0;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+      mix-blend-mode:overlay;
+      opacity:.25;
+      pointer-events:none;
+    }
+
+    .app{
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      max-width: 820px;
+      margin:0 auto;
+      padding: 16px;
+      gap: 12px;
+    }
+
+    /* Top status bar */
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding: 10px 12px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.04);
+      border-radius: 16px;
+      box-shadow: var(--shadow2);
+      backdrop-filter: blur(10px);
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      min-width: 160px;
+    }
+    .logo{
+      width:34px; height:34px; border-radius:12px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), rgba(255,255,255,.02)),
+                  linear-gradient(135deg, rgba(245,158,11,.95), rgba(245,158,11,.35));
+      box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 0 25px rgba(245,158,11,.22);
+      position:relative;
+    }
+    .logo:after{
+      content:"";
+      position:absolute; inset:9px;
+      border-radius:9px;
+      border:1px solid rgba(0,0,0,.35);
+      opacity:.45;
+    }
+    .brand h1{
+      margin:0;
+      font-size: 14px;
+      letter-spacing: .18em;
+      text-transform:uppercase;
+      font-weight: 800;
+      color: var(--gold);
+      text-shadow: 0 0 18px rgba(245,158,11,.25);
+    }
+    .subbrand{
+      font-size: 11px;
+      color: var(--muted2);
+      letter-spacing: .02em;
+      margin-top:2px;
+    }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(0,0,0,.25);
+      color: var(--muted);
+      font-size: 12px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:8px; height:8px; border-radius:99px;
+      background: rgba(255,255,255,.35);
+      box-shadow: 0 0 0 2px rgba(255,255,255,.06);
+    }
+    .dot.ok{ background: var(--ok); box-shadow: 0 0 0 2px rgba(34,197,94,.18), 0 0 22px rgba(34,197,94,.15); }
+    .dot.bad{ background: var(--danger); box-shadow: 0 0 0 2px rgba(239,68,68,.18), 0 0 22px rgba(239,68,68,.15); }
+    .dot.warn{ background: var(--gold); box-shadow: 0 0 0 2px rgba(245,158,11,.18), 0 0 22px rgba(245,158,11,.15); }
+
+    .content{
+      flex:1;
+      min-height:0;
+      display:flex;
+      gap: 12px;
+    }
+
+    /* Screens */
+    .screen{
+      flex:1;
+      display:none;
+      min-height:0;
+      gap: 12px;
+      flex-direction:column;
+      animation: fadeIn .18s ease-out;
+    }
+    .screen.active{ display:flex; }
+    @keyframes fadeIn{
+      from{ opacity:0; transform: translateY(6px); }
+      to{ opacity:1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card{
+      border:1px solid var(--stroke);
+      border-radius: var(--r);
+      background: radial-gradient(800px 260px at 20% 0%, rgba(245,158,11,.10), transparent 55%),
+                  rgba(255,255,255,.04);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      padding: 16px;
+    }
+    .card.tight{ padding: 12px; }
+    .row{ display:flex; gap:12px; }
+    .col{ flex:1; min-width:0; }
+
+    .title{
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font-size: 12px;
+      color: var(--muted2);
+      margin-bottom: 10px;
+    }
+
+    .bigTitle{
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      margin: 4px 0 2px;
+      color: var(--gold);
+      text-shadow: 0 0 28px rgba(245,158,11,.18);
+    }
+    .desc{
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+      margin:0;
+    }
+
+    label{
+      display:block;
+      font-size: 11px;
+      color: var(--muted2);
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      font-weight: 800;
+    }
+
+    input, select{
+      width:100%;
+      padding: 14px 14px;
+      border-radius: 14px;
+      border:1px solid var(--stroke);
+      outline:none;
+      color: var(--text);
+      background: rgba(0,0,0,.35);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+      font-size: 15px;
+      transition: .18s ease;
+    }
+    input:focus, select:focus{
+      border-color: rgba(245,158,11,.55);
+      box-shadow: 0 0 0 3px rgba(245,158,11,.18), inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    input::placeholder{ color: rgba(255,255,255,.35); }
+
+    .btn{
+      width:100%;
+      padding: 13px 14px;
+      border-radius: 14px;
+      border:1px solid transparent;
+      cursor:pointer;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      font-size: 12px;
+      transition: .18s ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      user-select:none;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+
+    .btnPrimary{
+      background: linear-gradient(135deg, rgba(245,158,11,1), rgba(245,158,11,.65));
+      color: #120c02;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.10), 0 16px 40px rgba(245,158,11,.18);
+    }
+    .btnPrimary:hover{ filter: brightness(1.04); }
+    .btnGhost{
+      background: rgba(255,255,255,.03);
+      border-color: var(--stroke);
+      color: var(--text);
+    }
+    .btnGhost:hover{ background: rgba(255,255,255,.05); border-color: var(--stroke2); }
+    .btnDanger{
+      background: rgba(239,68,68,.10);
+      border-color: rgba(239,68,68,.35);
+      color: rgba(255,255,255,.92);
+    }
+    .btnDanger:hover{ background: rgba(239,68,68,.14); }
+    .btnLink{
+      background: rgba(255,255,255,.06);
+      border-color: var(--stroke);
+      color: var(--text);
+    }
+
+    .splitline{
+      height:1px; width:100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent);
+      margin: 14px 0;
+    }
+
+    /* Lobby code */
+    .codeBox{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 14px 12px;
+      border-radius: 16px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.22);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+      margin: 10px 0 6px;
+    }
+    .code{
+      font-size: 42px;
+      font-weight: 900;
+      letter-spacing: .26em;
+      color: rgba(255,255,255,.92);
+      text-shadow: 0 0 24px rgba(255,255,255,.10);
+      user-select:text;
+    }
+
+    /* Players */
+    .list{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      border-radius: var(--r);
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.20);
+      padding: 10px;
+    }
+    .player{
+      display:flex; align-items:center; justify-content:space-between;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.04);
+      margin-bottom: 8px;
+    }
+    .player .left{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+    .player .name{
+      font-weight: 800;
+      font-size: 14px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .player .meta{
+      font-size: 12px;
+      color: var(--muted2);
+    }
+    .tag{
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .10em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border:1px solid var(--stroke);
+      color: var(--muted);
+      background: rgba(0,0,0,.22);
+      white-space:nowrap;
+    }
+    .tag.ready{
+      color:#120c02;
+      background: rgba(245,158,11,.92);
+      border-color: rgba(245,158,11,.35);
+      box-shadow: 0 0 18px rgba(245,158,11,.18);
+    }
+
+    /* Chat */
+    .chatWrap{
+      display:flex;
+      flex-direction:column;
+      min-height: 180px;
+      max-height: 220px;
+      border-radius: var(--r);
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+    }
+    .chatTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding: 10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.03);
+    }
+    .chatTop .ttl{
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      color: var(--muted2);
+    }
+    .chat{
+      flex:1;
+      min-height:0;
+      overflow:auto;
+      padding: 10px 12px;
+      display:flex;
+      flex-direction:column;
+      gap: 8px;
+    }
+    .msg{
+      display:flex;
+      flex-direction:column;
+      gap: 2px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+    }
+    .msg:last-child{ border-bottom:none; }
+    .msg .who{
+      font-weight: 900;
+      font-size: 12px;
+      color: var(--gold2);
+      letter-spacing: .04em;
+    }
+    .msg .txt{
+      font-size: 13px;
+      line-height: 1.35;
+      color: rgba(255,255,255,.9);
+      word-break: break-word;
+    }
+    .msg.sys .who{ color: rgba(255,255,255,.7); }
+    .msg.sys .txt{ color: rgba(255,255,255,.75); }
+
+    .chatForm{
+      display:flex;
+      gap: 8px;
+      padding: 10px 10px;
+      border-top:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.03);
+    }
+    .chatForm input{
+      padding: 12px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+    .sendBtn{
+      width: 52px;
+      border-radius: 12px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      font-weight: 900;
+      cursor:pointer;
+      transition: .18s ease;
+    }
+    .sendBtn:hover{ background: rgba(255,255,255,.08); border-color: var(--stroke2); }
+
+    /* Game role button */
+    .roleZone{
+      flex:1;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .revealBtn{
+      width: 260px;
+      height: 260px;
+      border-radius: 999px;
+      border:1px solid rgba(255,255,255,.10);
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+                  linear-gradient(145deg, rgba(255,255,255,.05), rgba(0,0,0,.20));
+      box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 8px rgba(255,255,255,.02);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding: 22px;
+      cursor:pointer;
+      user-select:none;
+      transition: .12s ease;
+    }
+    .revealBtn:active{ transform: scale(.98); filter: brightness(.96); }
+    .revealBtn .small{
+      font-weight: 900;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      font-size: 12px;
+      color: var(--muted2);
+      line-height: 1.2;
+    }
+
+    .overlay{
+      position: fixed;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(0,0,0,.65);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      padding: 16px;
+    }
+    .roleCard{
+      width: min(440px, 96vw);
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.12);
+      background: radial-gradient(900px 280px at 20% 0%, rgba(245,158,11,.18), transparent 55%),
+                  rgba(255,255,255,.06);
+      box-shadow: 0 40px 120px rgba(0,0,0,.7);
+      padding: 22px 18px;
+      text-align:center;
+      animation: pop .14s ease-out;
+    }
+    @keyframes pop{ from{ transform: scale(.97); opacity:0; } to{ transform: scale(1); opacity:1; } }
+
+    .roleIcon{
+      font-size: 54px;
+      margin-bottom: 8px;
+    }
+    .roleMain{
+      font-size: 26px;
+      font-weight: 1000;
+      letter-spacing: .02em;
+      margin: 0 0 6px;
+    }
+    .roleSub{
+      margin:0;
+      font-size: 13px;
+      color: rgba(255,255,255,.82);
+      line-height: 1.35;
+    }
+    .spyTheme{
+      background: radial-gradient(800px 280px at 20% 0%, rgba(239,68,68,.22), transparent 55%),
+                  rgba(255,255,255,.06);
+      border-color: rgba(239,68,68,.18);
+    }
+    .spyTheme .roleMain{ color: rgba(255,255,255,.95); }
+    .spyTheme .roleSub{ color: rgba(255,255,255,.82); }
+
+    /* Toasts */
+    .toasts{
+      position: fixed;
+      right: 14px;
+      top: 14px;
+      z-index: 1000;
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+      pointer-events:none;
+    }
+    .toast{
+      pointer-events:none;
+      width: min(360px, 92vw);
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 20px 70px rgba(0,0,0,.55);
+      padding: 10px 12px;
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      animation: toastIn .18s ease-out;
+    }
+    @keyframes toastIn{ from{ transform: translateY(-8px); opacity:0; } to{ transform: translateY(0); opacity:1; } }
+    .toast .ico{ width:22px; text-align:center; opacity:.95; }
+    .toast .t1{ font-weight: 900; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+    .toast .t2{ font-size: 12px; color: var(--muted); margin-top:2px; line-height:1.25; }
+    .toast.ok{ border-color: rgba(34,197,94,.25); }
+    .toast.warn{ border-color: rgba(245,158,11,.25); }
+    .toast.bad{ border-color: rgba(239,68,68,.25); }
+
+    /* Footer small */
+    .footer{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      color: rgba(255,255,255,.25);
+      font-size: 11px;
+      padding: 0 6px;
+      user-select:none;
+    }
+    .footer b{ color: rgba(255,255,255,.45); }
+
+    /* Mobile layout */
+    @media (max-width: 760px){
+      .content{ flex-direction:column; }
+      .chatWrap{ max-height: 220px; }
+      .revealBtn{ width: 240px; height:240px; }
+      .code{ font-size: 38px; }
+    }
   </style>
 </head>
+
 <body>
-  <!-- HTML разметка интерфейса (меню, лобби, игра) -->
-  <div id="secret-modal" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#ec4899; font-size:1.5rem; font-weight:bold; opacity:0; pointer-events:none; transition:0.5s;">Я люблю Соню ❤️</div>
-  <div class="easter-egg-zone" onclick="triggerEasterEgg()"></div>
+  <div class="toasts" id="toasts"></div>
 
-  <!-- 1. Главное меню -->
-  <div id="screen-menu" class="screen active">
-    <h1>Spy Game</h1>
-    <div class="card">
-      <div class="input-group">
-        <label>НИКНЕЙМ</label>
-        <input type="text" id="nick-inp" placeholder="Твое имя">
+  <!-- Easter Egg -->
+  <div id="secret-modal" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:#ec4899; font-size:1.5rem; font-weight:bold; opacity:0; pointer-events:none; transition:0.5s; z-index:1001;">
+    Я люблю Соню ❤️
+  </div>
+  <div style="position:fixed; top:0; left:0; width:20px; height:20px; z-index:1000;" onclick="triggerEasterEgg()"></div>
+
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo"></div>
+        <div>
+          <h1>Spy Game</h1>
+          <div class="subbrand">Dota Edition • Online Lobby</div>
+        </div>
       </div>
-      <button class="btn btn-primary" onclick="Net.host()">Создать лобби</button>
-      <div style="height: 1px; background: var(--border); margin: 20px 0;"></div>
-      <div class="input-group">
-        <label>КОД КОМНАТЫ (4 БУКВЫ)</label>
-        <input type="text" id="code-inp" placeholder="XXXX" style="letter-spacing: 5px; text-transform: uppercase;">
+
+      <div class="pill" id="statusPill">
+        <span class="dot warn" id="statusDot"></span>
+        <span id="statusText">Ожидание…</span>
       </div>
-      <button class="btn btn-outline" onclick="Net.join()">Присоединиться</button>
     </div>
-    <p style="text-align:center; color:#333; font-size:0.8rem; margin-top:auto;">v9.0 | No more limits</p>
+
+    <div class="content">
+      <!-- SCREEN: MENU -->
+      <div class="screen active" id="screen-menu">
+        <div class="card">
+          <div class="bigTitle">DOTA SPY</div>
+          <p class="desc">
+            Создай лобби, отправь код друзьям. Мирные знают героя. Шпион — нет.
+            Задача: вычислить шпиона или угадать героя.
+          </p>
+
+          <div class="splitline"></div>
+
+          <label>Никнейм</label>
+          <input id="nick" placeholder="Твое имя" autocomplete="nickname">
+
+          <div class="row" style="margin-top:12px;">
+            <div class="col">
+              <button class="btn btnPrimary" id="btnHost">⚡ Создать лобби</button>
+            </div>
+          </div>
+
+          <div class="splitline"></div>
+
+          <label>Код комнаты (4 символа)</label>
+          <input id="roomCode" placeholder="XXXX" style="text-transform:uppercase; letter-spacing:.28em; text-align:center;" maxlength="4" />
+
+          <button class="btn btnGhost" id="btnJoin" style="margin-top:10px;">➜ Присоединиться</button>
+
+          <div class="footer" style="margin-top:12px;">
+            <span><b>v10</b> • GitHub Pages</span>
+            <span>Enter → отправка чата</span>
+          </div>
+        </div>
+
+        <div class="card tight">
+          <div class="title">Подсказка</div>
+          <p class="desc" style="margin:0;">
+            Открой ссылку с <b>?code=XXXX</b> — код автоматически подставится.
+          </p>
+        </div>
+      </div>
+
+      <!-- SCREEN: LOBBY -->
+      <div class="screen" id="screen-lobby">
+        <div class="card">
+          <div class="title">Код комнаты</div>
+          <div class="codeBox">
+            <div class="code" id="codeDisplay">....</div>
+          </div>
+
+          <div class="row">
+            <div class="col">
+              <button class="btn btnLink" id="btnCopyLink">🔗 Скопировать ссылку</button>
+            </div>
+            <div class="col">
+              <button class="btn btnGhost" id="btnCopyCode">📋 Скопировать код</button>
+            </div>
+          </div>
+
+          <div class="splitline"></div>
+
+          <div class="row">
+            <div class="col" id="hostSettings" style="display:none;">
+              <label>Шпионов</label>
+              <select id="spyCount">
+                <option value="1">1 Шпион</option>
+                <option value="2">2 Шпиона</option>
+                <option value="3">3 Шпиона (хаос)</option>
+              </select>
+            </div>
+            <div class="col">
+              <label>Статус</label>
+              <div class="pill" style="justify-content:center; width:100%;">
+                <span class="dot" id="readyDot"></span>
+                <span id="readyText">Готовность…</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="min-height:0;">
+          <div class="col" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="card tight" style="display:flex; flex-direction:column; min-height:0;">
+              <div class="title">Игроки</div>
+              <div class="list" id="playersList"></div>
+
+              <div class="row" style="margin-top:10px;">
+                <div class="col">
+                  <button class="btn btnGhost" id="btnReady">✓ Я ГОТОВ</button>
+                </div>
+                <div class="col">
+                  <button class="btn btnPrimary" id="btnStart" style="display:none;">▶ НАЧАТЬ РАУНД</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col" style="display:flex; flex-direction:column; min-height:0;">
+            <div class="chatWrap">
+              <div class="chatTop">
+                <div class="ttl">Чат лобби</div>
+                <div class="pill" style="padding:6px 8px; font-size:11px;">
+                  <span style="opacity:.75;">online:</span>
+                  <b id="onlineCount" style="margin-left:6px;">0</b>
+                </div>
+              </div>
+              <div class="chat" id="chatLobby"></div>
+              <div class="chatForm">
+                <input id="chatLobbyInp" placeholder="Напиши что-нибудь…" />
+                <button class="sendBtn" id="chatLobbySend">➤</button>
+              </div>
+            </div>
+
+            <div class="footer" style="margin-top:10px;">
+              <span>Хост запускает игру</span>
+              <span>Минимум: <b>3</b> игрока</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCREEN: GAME -->
+      <div class="screen" id="screen-game">
+        <div class="card">
+          <div class="row" style="align-items:center;">
+            <div class="col">
+              <div class="title">Раунд</div>
+              <div style="font-size:14px; color:rgba(255,255,255,.85); font-weight:900;">
+                <span id="roundInfo">—</span>
+              </div>
+              <div class="desc" style="margin-top:4px;">
+                Удерживай кнопку, чтобы увидеть роль. Не показывай экран другим.
+              </div>
+            </div>
+            <div class="col" style="display:flex; justify-content:flex-end;">
+              <button class="btn btnDanger" id="btnVote">🚨 ВЫЗВАТЬ ГОЛОСОВАНИЕ</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+          <div class="roleZone">
+            <div class="revealBtn" id="revealBtn">
+              <div class="small">УДЕРЖИВАЙ<br>ЧТОБЫ УЗНАТЬ РОЛЬ</div>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <div class="col">
+              <button class="btn btnGhost" id="btnLeaveToLobby">⟵ В лобби</button>
+            </div>
+            <div class="col">
+              <button class="btn btnLink" id="btnEndHost" style="display:none;">⛔ Завершить раунд (хост)</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="chatWrap" style="max-height: 220px;">
+          <div class="chatTop">
+            <div class="ttl">Чат игры</div>
+            <div class="pill" style="padding:6px 8px; font-size:11px;">
+              <span style="opacity:.75;">раунд:</span>
+              <b id="roundNumSmall" style="margin-left:6px;">—</b>
+            </div>
+          </div>
+          <div class="chat" id="chatGame"></div>
+          <div class="chatForm">
+            <input id="chatGameInp" placeholder="Обсуждение…" />
+            <button class="sendBtn" id="chatGameSend">➤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>Сделано для друзей • <b>Dota Spy Game</b></span>
+      <span id="buildInfo">P2P • PeerJS</span>
+    </div>
   </div>
 
-  <!-- 2. Лобби -->
-  <div id="screen-lobby" class="screen">
-    <div class="card" style="text-align:center;">
-      <label>КОД ДЛЯ ВХОДА</label>
-      <div class="room-code-display" id="lobby-code-display">....</div>
-      <button class="btn btn-link" onclick="Game.copyInvite()">🔗 Скопировать ссылку</button>
-      <div id="host-settings-panel" style="margin-top:15px; display:none;">
-        <label>Настройки шпионов</label>
-        <select id="spy-count" onchange="Game.sendSettings()">
-          <option value="1">1 Шпион</option>
-          <option value="2">2 Шпиона</option>
-          <option value="3">3 Шпиона (Хаос)</option>
-        </select>
-      </div>
-    </div>
-    <label style="padding: 0 4px;">ИГРОКИ ОНЛАЙН</label>
-    <div class="player-list" id="player-list-container"></div>
-    <div style="margin-top: 15px;">
-      <button id="btn-ready" class="btn btn-outline" onclick="Game.toggleReady()">ГОТОВ</button>
-      <button id="btn-start" class="btn btn-primary" onclick="Game.startGame()" style="display:none;">НАЧАТЬ РАУНД</button>
-    </div>
-    <!-- Чат лобби -->
-    <div class="chat-section">
-      <div class="chat-history" id="chat-lobby"></div>
-      <div class="chat-form">
-        <input type="text" class="chat-inp" id="chat-inp-lobby" placeholder="Чат...">
-        <button class="chat-btn" onclick="Game.sendChat('lobby')">➤</button>
-      </div>
+  <!-- Role overlay -->
+  <div class="overlay" id="overlay">
+    <div class="roleCard" id="roleCard">
+      <div class="roleIcon" id="roleIcon">🛡️</div>
+      <div class="roleMain" id="roleMain">…</div>
+      <p class="roleSub" id="roleSub">…</p>
     </div>
   </div>
 
-  <!-- 3. Экран игры -->
-  <div id="screen-game" class="screen">
-    <div class="role-wrapper">
-      <!-- Кнопка показа роли (удерживать) -->
-      <div class="role-reveal-btn" id="reveal-btn"
-           onmousedown="Game.reveal(true)" onmouseup="Game.reveal(false)"
-           onmouseleave="Game.reveal(false)"
-           ontouchstart="Game.reveal(true)" ontouchend="Game.reveal(false)"
-           ontouchcancel="Game.reveal(false)">
-        <span style="pointer-events: none;">УДЕРЖИВАЙ<br>ЧТОБЫ<br>УЗНАТЬ РОЛЬ</span>
-      </div>
-      <!-- Оверлей роли -->
-      <div id="role-overlay" class="role-content">
-        <div id="role-icon" class="role-icon"></div>
-        <div id="role-text" class="role-hero"></div>
-        <div id="role-sub" class="role-sub"></div>
-      </div>
+<script>
+/* =======================
+   DATA
+======================= */
+const DOTA_HEROES = [
+  "Abaddon","Alchemist","Ancient Apparition","Anti-Mage","Arc Warden","Axe","Bane","Batrider",
+  "Beastmaster","Bloodseeker","Bounty Hunter","Brewmaster","Bristleback","Broodmother",
+  "Centaur Warrunner","Chaos Knight","Chen","Clinkz","Clockwerk","Crystal Maiden","Dark Seer",
+  "Dark Willow","Dawnbreaker","Dazzle","Death Prophet","Disruptor","Doom","Dragon Knight",
+  "Drow Ranger","Earth Spirit","Earthshaker","Elder Titan","Ember Spirit","Enchantress","Enigma",
+  "Faceless Void","Grimstroke","Gyrocopter","Hoodwink","Huskar","Invoker","Io","Jakiro",
+  "Juggernaut","Keeper of the Light","Kunkka","Legion Commander","Leshrac","Lich","Lifestealer",
+  "Lina","Lion","Lone Druid","Luna","Lycan","Magnus","Marci","Mars","Medusa","Meepo","Mirana",
+  "Monkey King","Morphling","Muerta","Naga Siren","Nature’s Prophet","Necrophos","Night Stalker",
+  "Nyx Assassin","Ogre Magi","Omniknight","Oracle","Outworld Destroyer","Pangolier","Phantom Assassin",
+  "Phantom Lancer","Phoenix","Puck","Pudge","Pugna","Queen of Pain","Razor","Riki","Rubick",
+  "Sand King","Shadow Demon","Shadow Fiend","Shadow Shaman","Silencer","Skywrath Mage","Slardar",
+  "Slark","Snapfire","Sniper","Spectre","Spirit Breaker","Storm Spirit","Sven","Techies",
+  "Templar Assassin","Terrorblade","Tidehunter","Timbersaw","Tinker","Tiny","Treant Protector",
+  "Troll Warlord","Tusk","Underlord","Undying","Ursa","Vengeful Spirit","Venomancer","Viper",
+  "Visage","Void Spirit","Warlock","Weaver","Windranger","Winter Wyvern","Witch Doctor",
+  "Wraith King","Zeus"
+];
+
+const CONFIG = {
+  ROOM_PREFIX: "dota-spy-v10-",
+  MIN_PLAYERS: 3,
+  MAX_CHAT: 80,
+  // По умолчанию PeerJS Cloud. Для более стабильной связи можно поднять свой PeerServer.
+  PEER_OPTIONS: undefined // пример: { host:'your-peer-server.com', port:443, secure:true, path:'/peerjs' }
+};
+
+/* =======================
+   STATE (Public + Private)
+======================= */
+const App = {
+  me: { id: null, name: "", isHost: false },
+  // publicState приходит всем
+  publicState: {
+    phase: "menu",        // menu | lobby | game
+    roomCode: "",
+    config: { spies: 1 },
+    players: [],          // {id,name,ready,host}
+    lobbyChat: [],        // {name,text,ts,sys?}
+    gameChat: [],         // {name,text,ts,sys?}
+    round: { num: 0, startedAt: null } // публично: без героя и ролей
+  },
+  // privateRole приходит только конкретному игроку
+  privateRole: {
+    isSpy: false,
+    hero: null // null для шпиона, строка для мирного
+  },
+
+  // только у хоста: секретные данные раунда
+  hostSecret: {
+    spyStreak: new Map(),     // id -> streak
+    roundHero: null,          // герой текущего раунда
+    spyIds: new Set(),        // кто шпион
+  }
+};
+
+/* =======================
+   UI Helpers
+======================= */
+const $ = (id) => document.getElementById(id);
+
+function setStatus(text, type="warn"){
+  $("statusText").textContent = text;
+  $("statusDot").className = "dot " + (type==="ok" ? "ok" : type==="bad" ? "bad" : "warn");
+}
+
+function toast(type, title, msg){
+  const box = $("toasts");
+  const el = document.createElement("div");
+  el.className = "toast " + (type || "");
+  const ico = type==="ok" ? "✅" : type==="bad" ? "⛔" : "⚡";
+  el.innerHTML = `
+    <div class="ico">${ico}</div>
+    <div style="min-width:0;">
+      <div class="t1">${escapeHtml(title)}</div>
+      <div class="t2">${escapeHtml(msg)}</div>
     </div>
-    <div class="card">
-      <button class="btn btn-danger" onclick="alert('Обсудите голосом и выберите шпиона!')">🚨 ВЫЗВАТЬ ГОЛОСОВАНИЕ</button>
-      <button id="host-end-btn" class="btn btn-ghost" onclick="Game.endRound()" style="display:none; margin-bottom:0;">Завершить игру (Хост)</button>
-    </div>
-    <!-- Чат раунда -->
-    <div class="chat-section" style="height: 120px;">
-      <div class="chat-history" id="chat-game"></div>
-      <div class="chat-form">
-        <input type="text" class="chat-inp" id="chat-inp-game" placeholder="Обсуждение...">
-        <button class="chat-btn" onclick="Game.sendChat('game')">➤</button>
-      </div>
-    </div>
-  </div>
+  `;
+  box.appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(-6px)"; }, 2600);
+  setTimeout(()=>{ el.remove(); }, 3200);
+}
 
-  <div id="conn-status">Ожидание...</div>
+function escapeHtml(str){
+  return (str ?? "").toString()
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
 
-  <script>
-    // --- ДАННЫЕ ---
-    const DOTA_HEROES = [ /* ... массив имен героев, опущен для краткости ... */ ];
+function switchScreen(phase){
+  App.publicState.phase = phase;
+  ["menu","lobby","game"].forEach(p=>{
+    const el = $("screen-"+p);
+    el.classList.toggle("active", p===phase);
+  });
+}
 
-    // --- Глобальное состояние приложения ---
-    const App = {
-      state: {
-        phase: 'menu',        // текущая фаза: menu, lobby, game
-        roomCode: '',
-        players: [],          // список игроков {id, name, ready, isSpy, hero, spyStreak}
-        chat: [],             // сообщения чата {name, text}
-        config: { spies: 1 }  // количество шпионов
-      },
-      me: { id: null, name: '', isHost: false },
-      hostData: { 
-        conns: [],   // подключения (для хоста)
-        hero: ''     // загаданый герой (для хоста, если нужно хранить отдельно)
-      }
-    };
+function nowTs(){ return Date.now(); }
 
-    // --- СЕТЕВОЙ МОДУЛЬ (PeerJS) ---
-    const Net = {
-      peer: null,
-      conn: null,
-      log: (txt) => {
-        document.getElementById('conn-status').innerText = txt;
-        console.log("[Net]", txt);
-      },
-      // Создание лобби (хост)
-      host: function() {
-        App.me.name = document.getElementById('nick-inp').value.trim() || "Host";
-        App.me.isHost = true;
-        const code = this.generateCode();
-        App.state.roomCode = code;
-        const peerId = `spy-game-v9-${code}`;
-        this.log("Создаю сервер: " + code);
-        this.initPeer(peerId);
-      },
-      // Подключение к лобби (к хосту)
-      join: function() {
-        App.me.name = document.getElementById('nick-inp').value.trim() || "Player";
-        App.me.isHost = false;
-        const code = document.getElementById('code-inp').value.trim().toUpperCase();
-        if(code.length !== 4) return alert("Код должен быть из 4 букв");
-        const peerId = `spy-client-${Math.random().toString(36).substr(2, 9)}`;
-        this.initPeer(peerId, code);
-      },
-      // Инициализация PeerJS
-      initPeer: function(id, targetCode = null) {
-        if(this.peer) this.peer.destroy();
-        this.peer = new Peer(id);
-        this.peer.on('open', (myId) => {
-          App.me.id = myId;
-          this.log("Онлайн. ID: " + myId);
-          if(App.me.isHost) {
-            // Инициализация состояния для хоста
-            App.state.players = [{ 
-              id: myId, name: App.me.name, ready: true, 
-              isSpy: false, spyStreak: 0 
-            }];
-            Game.enterLobby();
-          } else {
-            // Подключение к хосту
-            const hostId = `spy-game-v9-${targetCode}`;
-            this.connectToHost(hostId);
-          }
-        });
-        this.peer.on('error', (err) => {
-          console.error(err);
-          if(err.type === 'unavailable-id') {
-            if(App.me.isHost) {
-              alert("Код комнаты уже занят, пробую другой...");
-              // При конфликте кода сгенерировать новый и повторить
-              const newCode = this.generateCode();
-              App.state.roomCode = newCode;
-              const newPeerId = `spy-game-v9-${newCode}`;
-              if(this.peer) this.peer.destroy();
-              this.initPeer(newPeerId);
-            }
-          } else if (err.type === 'peer-unavailable') {
-            alert("Комната не найдена. Проверь код.");
-            this.log("Хост не найден");
-          } else {
-            alert("Network Error: " + err.type);
-          }
-        });
-        // Хост: обработка входящих подключений
-        if(App.me.isHost) {
-          this.peer.on('connection', (c) => {
-            App.hostData.conns.push(c);
-            c.on('data', (data) => this.handleDataAsHost(data, c.peer));
-            c.on('close', () => {
-              // Игрок отключился
-              const pl = App.state.players.find(p => p.id === c.peer);
-              if(pl) {
-                Net.pushChat({ name: 'Система', text: `${pl.name} покинул игру.` });
-              }
-              App.hostData.conns = App.hostData.conns.filter(x => x !== c);
-              App.state.players = App.state.players.filter(p => p.id !== c.peer);
-              this.broadcast();
-            });
-            // **Не отправляем больше состояние сразу при подключении.**
-            // Новому игроку состояние пришлём после обработки его JOIN.
-          });
-        }
-      },
-      connectToHost: function(hostId) {
-        this.log("Подключаюсь к " + hostId);
-        this.conn = this.peer.connect(hostId);
-        this.conn.on('open', () => {
-          this.log("Соединение с хостом установлено");
-          this.conn.send({ type: 'JOIN', name: App.me.name });
-        });
-        this.conn.on('data', (data) => {
-          if(data.type === 'SYNC') {
-            App.state = data.state;
-            Game.render();
-          }
-        });
-        this.conn.on('close', () => {
-          alert("Соединение с хостом потеряно.");
-          location.reload();
-        });
-      },
-      // Обработчик данных (только на хосте)
-      handleDataAsHost: function(data, peerId) {
-        let changed = false;
-        if(data.type === 'JOIN') {
-          // Новый игрок хочет присоединиться
-          if(!App.state.players.find(p => p.id === peerId)) {
-            App.state.players.push({
-              id: peerId, name: data.name, 
-              ready: false, isSpy: false, spyStreak: 0
-            });
-            // Сообщение о подключении нового игрока
-            this.pushChat({ name: 'Система', text: `${data.name} присоединился к игре.` });
-            changed = true;
-          }
-        }
-        if(data.type === 'READY') {
-          const p = App.state.players.find(x => x.id === peerId);
-          if(p) { p.ready = !p.ready; changed = true; }
-        }
-        if(data.type === 'CHAT') {
-          this.pushChat(data.msg);
-          changed = true;
-        }
-        if(changed) this.broadcast();
-      },
-      pushChat: function(msg) {
-        App.state.chat.push(msg);
-        if(App.state.chat.length > 50) App.state.chat.shift();
-      },
-      // Рассылка состояния всем (только хост)
-      broadcast: function() {
-        Game.render();  // обновить интерфейс хоста
-        App.hostData.conns.forEach(c => {
-          if(c.open) {
-            // Персонализированная копия состояния для каждого игрока
-            const stateCopy = JSON.parse(JSON.stringify(App.state));
-            const selfPlayer = stateCopy.players.find(p => p.id === c.peer);
-            if(selfPlayer) {
-              if(selfPlayer.isSpy) {
-                // Шпион: убрать информацию о герое у всех
-                stateCopy.players.forEach(pl => {
-                  pl.hero = "";  // герой не известен
-                  if(pl.id !== selfPlayer.id) {
-                    pl.isSpy = false; // другие шпионы не раскрыты
-                  }
-                });
-                // (selfPlayer.isSpy остаётся true, шпион знает что он шпион)
-              } else {
-                // Мирный: скрыть роли шпионов (никто не помечен как шпион)
-                stateCopy.players.forEach(pl => {
-                  pl.isSpy = false;
-                });
-                // (название героя остаётся, т.к. мирные его знают)
-              }
-            }
-            c.send({ type: 'SYNC', state: stateCopy });
-          }
-        });
-      },
-      generateCode: function() {
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        let res = "";
-        for(let i=0; i<4; i++) res += chars.charAt(Math.floor(Math.random()*chars.length));
-        return res;
-      }
-    };
+function sysMsg(text){
+  return { name:"Система", text, ts: nowTs(), sys:true };
+}
 
-    // --- ЛОГИКА ИГРЫ ---
-    const Game = {
-      enterLobby: function() {
-        App.state.phase = 'lobby';
-        Net.broadcast();
-      },
-      toggleReady: function() {
-        if(App.me.isHost) return;
-        Net.conn.send({ type: 'READY' });
-      },
-      sendChat: function(ctx) {
-        const el = document.getElementById(`chat-inp-${ctx}`);
-        const text = el.value.trim();
-        if(!text) return;
-        const msg = { name: App.me.name, text: text };
-        if(App.me.isHost) {
-          Net.pushChat(msg);
-          Net.broadcast();
-        } else {
-          Net.conn.send({ type: 'CHAT', msg: msg });
-        }
-        el.value = '';
-      },
-      sendSettings: function() {
-        if(!App.me.isHost) return;
-        App.state.config.spies = parseInt(document.getElementById('spy-count').value);
-        Net.broadcast();
-      },
-      // --- Запуск раунда (выбор шпиона и раздача ролей) ---
-      startGame: function() {
-        const count = App.state.players.length;
-        if(count < 3) return alert("Минимум 3 игрока!");
-        // Проверка: все ли нажали "Готов"
-        const allReady = App.state.players.every(p => p.ready);
-        if(!allReady) {
-          return alert("Не все игроки готовы!");
-        }
-        // 1. Выбор героя случайно
-        const hero = DOTA_HEROES[Math.floor(Math.random() * DOTA_HEROES.length)];
-        // 2. Составляем список кандидатов в шпионы (учёт серий)
-        let candidates = App.state.players.filter(p => p.spyStreak < 3);
-        if(candidates.length < App.state.config.spies) {
-          candidates = [...App.state.players];
-        }
-        // 3. Перемешиваем кандидатов
-        for (let i = candidates.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-        }
-        // 4. Выбираем нужное число шпионов
-        const spiesToPick = App.state.config.spies;
-        const chosenSpyIds = candidates.slice(0, spiesToPick).map(p => p.id);
-        // 5. Проставляем роли и героя
-        App.state.players.forEach(p => {
-          p.hero = hero;
-          if(chosenSpyIds.includes(p.id)) {
-            p.isSpy = true;
-            p.spyStreak += 1;
-          } else {
-            p.isSpy = false;
-            p.spyStreak = 0;
-          }
-        });
-        App.state.phase = 'game';
-        App.state.chat = [];  // очистка чата для нового раунда
-        Net.broadcast();
-      },
-      endRound: function() {
-        App.state.phase = 'lobby';
-        App.state.players.forEach(p => p.ready = false);
-        App.state.chat = [];  // очистка чата после раунда (новый чистый лобби)
-        Net.broadcast();
-      },
-      copyInvite: function() {
-        const url = window.location.origin + window.location.pathname + '?code=' + App.state.roomCode;
-        navigator.clipboard.writeText(url).then(() => alert("Ссылка скопирована!"));
-      },
-      render: function() {
-        // Переключение экранов
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        if(App.state.phase === 'menu') {
-          document.getElementById('screen-menu').classList.add('active');
-          // Если в URL есть код комнаты, показать его в поле
-          const params = new URLSearchParams(location.search);
-          if(params.has('code')) document.getElementById('code-inp').value = params.get('code');
-        } else if(App.state.phase === 'lobby') {
-          document.getElementById('screen-lobby').classList.add('active');
-          document.getElementById('lobby-code-display').innerText = App.state.roomCode;
-          const isHost = App.me.isHost;
-          // Кнопка "Начать" видна только хосту, активна если все готовы
-          const startBtn = document.getElementById('btn-start');
-          if(isHost) {
-            startBtn.style.display = 'flex';
-            const allReady = App.state.players.every(p => p.ready);
-            startBtn.disabled = !allReady;
-          } else {
-            startBtn.style.display = 'none';
-          }
-          document.getElementById('host-settings-panel').style.display = isHost ? 'block' : 'none';
-          const btnReady = document.getElementById('btn-ready');
-          if(isHost) {
-            btnReady.style.display = 'none';
-          } else {
-            btnReady.style.display = 'flex';
-            const me = App.state.players.find(p => p.id === App.me.id);
-            if(me) {
-              btnReady.innerText = me.ready ? "Я НЕ ГОТОВ" : "Я ГОТОВ";
-              btnReady.style.background = me.ready ? 'transparent' : '';
-              btnReady.style.border = me.ready ? '1px solid #777' : '';
-            }
-          }
-          // Обновление списка игроков в лобби
-          const list = document.getElementById('player-list-container');
-          list.innerHTML = '';
-          App.state.players.forEach(p => {
-            list.innerHTML += `
-              <div class="player-row ${p.ready ? 'ready' : ''}">
-                <span>${p.name} ${p.id === App.me.id ? '(Вы)' : ''}</span>
-                <span class="status-pill ${p.ready ? 'st-ready' : 'st-wait'}">
-                  ${p.ready ? 'READY' : 'WAIT'}
-                </span>
-              </div>`;
-          });
-          this.renderChat('lobby');
-        } else if(App.state.phase === 'game') {
-          document.getElementById('screen-game').classList.add('active');
-          this.prepareRoleCard();
-          document.getElementById('host-end-btn').style.display = App.me.isHost ? 'flex' : 'none';
-          this.renderChat('game');
-        }
-      },
-      renderChat: function(ctx) {
-        const box = document.getElementById(`chat-${ctx}`);
-        box.innerHTML = '';
-        App.state.chat.forEach(msg => {
-          box.innerHTML += `<div class="msg"><b>${msg.name}:</b> ${msg.text}</div>`;
-        });
-        box.scrollTop = box.scrollHeight;
-      },
-      prepareRoleCard: function() {
-        const me = App.state.players.find(p => p.id === App.me.id);
-        if(!me) return;
-        const card = document.getElementById('role-overlay');
-        const icon = document.getElementById('role-icon');
-        const hero = document.getElementById('role-text');
-        const sub = document.getElementById('role-sub');
-        if(me.isSpy) {
-          card.classList.add('spy-mode');
-          icon.innerText = "😈";
-          hero.innerText = "ТЫ ШПИОН";
-          sub.innerText = "Скройся и угадай героя";
-        } else {
-          card.classList.remove('spy-mode');
-          icon.innerText = "🛡️";
-          hero.innerText = me.hero;      // у мирного показывается имя героя
-          sub.innerText = "Ты Мирный";
-        }
-      },
-      // Механика удержания для показа роли
-      reveal: function(show) {
-        const overlay = document.getElementById('role-overlay');
-        const btn = document.getElementById('reveal-btn');
-        if(show) {
-          overlay.style.display = 'block';
-          btn.style.opacity = 0.2;
-        } else {
-          overlay.style.display = 'none';
-          btn.style.opacity = 1;
-        }
-      }
-    };
+function scrollChatToBottom(el){
+  el.scrollTop = el.scrollHeight + 9999;
+}
 
-    // --- Прочие функции ---
-    function triggerEasterEgg() {
-      const el = document.getElementById('secret-modal');
-      el.style.opacity = 1;
-      el.style.zIndex = 9999;
-      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-      setTimeout(() => { el.style.opacity = 0; el.style.zIndex = -1; }, 2500);
+/* =======================
+   Networking (PeerJS)
+======================= */
+const Net = {
+  peer: null,
+  connToHost: null,
+  hostConns: new Map(),  // peerId -> conn
+  lastSyncSeq: 0,
+  isConnected: false,
+
+  destroy(){
+    try{ this.connToHost?.close(); }catch{}
+    try{ this.peer?.destroy(); }catch{}
+    this.peer = null;
+    this.connToHost = null;
+    this.hostConns.clear();
+    this.isConnected = false;
+  },
+
+  generateCode(){
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let res = "";
+    for(let i=0;i<4;i++) res += chars[Math.floor(Math.random()*chars.length)];
+    return res;
+  },
+
+  host(){
+    const name = ($("nick").value || "").trim() || "Host";
+    App.me.name = name;
+    App.me.isHost = true;
+
+    const code = Net.generateCode();
+    App.publicState.roomCode = code;
+
+    const peerId = CONFIG.ROOM_PREFIX + code;
+    Net.initPeer(peerId);
+  },
+
+  join(){
+    const name = ($("nick").value || "").trim() || "Player";
+    App.me.name = name;
+    App.me.isHost = false;
+
+    const code = ($("roomCode").value || "").trim().toUpperCase();
+    if(code.length !== 4){
+      toast("warn","Код комнаты","Код должен быть из 4 символов.");
+      return;
     }
 
-    // --- Старт приложения ---
-    window.onload = function() {
-      // Если открыта ссылка с кодом комнаты, вставить код в поле подключения
-      const url = new URL(window.location.href);
-      if(url.searchParams.has('code')) {
-        document.getElementById('code-inp').value = url.searchParams.get('code');
+    App.publicState.roomCode = code;
+
+    const peerId = "client-" + Math.random().toString(36).slice(2,10);
+    Net.initPeer(peerId, code);
+  },
+
+  initPeer(myPeerId, targetCode=null){
+    Net.destroy();
+    setStatus("Подключение…","warn");
+
+    const peer = CONFIG.PEER_OPTIONS ? new Peer(myPeerId, CONFIG.PEER_OPTIONS) : new Peer(myPeerId);
+    Net.peer = peer;
+
+    peer.on("open", (id)=>{
+      App.me.id = id;
+      Net.isConnected = true;
+      setStatus("Онлайн","ok");
+
+      if(App.me.isHost){
+        // init public state
+        App.publicState.phase = "lobby";
+        App.publicState.players = [{
+          id: App.me.id,
+          name: App.me.name,
+          ready: true,
+          host: true
+        }];
+        App.publicState.lobbyChat = [sysMsg("Лобби создано. Отправь код друзьям.")];
+        App.publicState.gameChat = [];
+        App.publicState.config = { spies: 1 };
+        App.publicState.round = { num: 0, startedAt: null };
+
+        // init streak map
+        App.hostSecret.spyStreak = new Map();
+        App.hostSecret.spyStreak.set(App.me.id, 0);
+
+        UI.renderAll();
+        Net.broadcastFullSync();
+        toast("ok","Лобби создано","Комната: " + App.publicState.roomCode);
+      } else {
+        Net.connectToHost(targetCode);
       }
-      // Отправка сообщения по Enter в чате
-      document.getElementById('chat-inp-lobby').addEventListener('keyup', (e) => {
-        if(e.key === 'Enter') Game.sendChat('lobby');
+    });
+
+    peer.on("error",(err)=>{
+      console.error(err);
+      if(err.type === "peer-unavailable"){
+        setStatus("Комната не найдена","bad");
+        toast("bad","Комната не найдена","Проверь код и попробуй снова.");
+        switchScreen("menu");
+        return;
+      }
+      if(err.type === "unavailable-id" && App.me.isHost){
+        // редкий случай: код занят — генерим новый
+        const newCode = Net.generateCode();
+        App.publicState.roomCode = newCode;
+        const newPeerId = CONFIG.ROOM_PREFIX + newCode;
+        toast("warn","Код занят","Пробую другой код…");
+        try{ peer.destroy(); }catch{}
+        Net.initPeer(newPeerId);
+        return;
+      }
+      setStatus("Ошибка сети","bad");
+      toast("bad","Ошибка сети", err.type || "unknown");
+    });
+
+    // HOST: handle incoming connections
+    peer.on("connection",(conn)=>{
+      if(!App.me.isHost) return;
+      Net.hostConns.set(conn.peer, conn);
+
+      conn.on("open", ()=>{
+        // ждём JOIN
       });
-      document.getElementById('chat-inp-game').addEventListener('keyup', (e) => {
-        if(e.key === 'Enter') Game.sendChat('game');
+
+      conn.on("data", (data)=>{
+        Net.handleHostIncoming(conn.peer, data);
       });
+
+      conn.on("close", ()=>{
+        Net.hostConns.delete(conn.peer);
+        // remove player
+        const pl = App.publicState.players.find(p=>p.id===conn.peer);
+        if(pl){
+          App.publicState.players = App.publicState.players.filter(p=>p.id!==conn.peer);
+          App.publicState.lobbyChat.push(sysMsg(pl.name + " вышел из игры."));
+          App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
+          Net.broadcastFullSync();
+          UI.renderAll();
+        }
+      });
+    });
+  },
+
+  connectToHost(code){
+    const hostId = CONFIG.ROOM_PREFIX + code;
+    setStatus("Подключение к хосту…","warn");
+
+    const conn = Net.peer.connect(hostId, { reliable: true });
+    Net.connToHost = conn;
+
+    conn.on("open", ()=>{
+      setStatus("В лобби","ok");
+      conn.send({ t:"JOIN", name: App.me.name });
+    });
+
+    conn.on("data", (data)=>{
+      Net.handleClientIncoming(data);
+    });
+
+    conn.on("close", ()=>{
+      setStatus("Соединение потеряно","bad");
+      toast("bad","Отключено","Похоже, хост закрыл лобби или пропал интернет.");
+      switchScreen("menu");
+      Net.destroy();
+    });
+
+    conn.on("error",(e)=>{
+      console.error(e);
+      setStatus("Ошибка соединения","bad");
+      toast("bad","Ошибка соединения","Не удалось подключиться к хосту.");
+      switchScreen("menu");
+    });
+  },
+
+  // CLIENT receives SYNC
+  handleClientIncoming(data){
+    if(!data || typeof data !== "object") return;
+    if(data.t === "SYNC"){
+      // basic seq protection
+      const seq = data.seq || 0;
+      if(seq < Net.lastSyncSeq) return;
+      Net.lastSyncSeq = seq;
+
+      App.publicState = data.public;
+      App.privateRole = data.private || { isSpy:false, hero:null };
+
+      UI.renderAll();
+    } else if(data.t === "KICK"){
+      toast("bad","Кик","Хост отключил тебя.");
+      location.reload();
     }
-  </script>
+  },
+
+  // HOST receives actions
+  handleHostIncoming(peerId, data){
+    if(!data || typeof data !== "object") return;
+
+    if(data.t === "JOIN"){
+      const name = (data.name || "Player").toString().slice(0, 24);
+
+      // if already exists -> update name
+      let player = App.publicState.players.find(p=>p.id===peerId);
+      if(!player){
+        player = { id: peerId, name, ready:false, host:false };
+        App.publicState.players.push(player);
+        // init streak
+        if(!App.hostSecret.spyStreak.has(peerId)) App.hostSecret.spyStreak.set(peerId, 0);
+
+        App.publicState.lobbyChat.push(sysMsg(name + " подключился."));
+        App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
+      } else {
+        player.name = name;
+      }
+
+      Net.broadcastFullSync();
+      UI.renderAll();
+      return;
+    }
+
+    if(data.t === "READY"){
+      const pl = App.publicState.players.find(p=>p.id===peerId);
+      if(pl){
+        pl.ready = !pl.ready;
+        Net.broadcastFullSync();
+        UI.renderAll();
+      }
+      return;
+    }
+
+    if(data.t === "CHAT"){
+      const text = (data.text || "").toString().trim();
+      if(!text) return;
+      const pl = App.publicState.players.find(p=>p.id===peerId);
+      const name = pl?.name || "Player";
+
+      if(App.publicState.phase === "lobby"){
+        App.publicState.lobbyChat.push({ name, text, ts: nowTs() });
+        App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
+      } else {
+        App.publicState.gameChat.push({ name, text, ts: nowTs() });
+        App.publicState.gameChat = trimChat(App.publicState.gameChat);
+      }
+      Net.broadcastFullSync();
+      UI.renderAll();
+      return;
+    }
+
+    if(data.t === "SETTINGS" && App.me.isHost){
+      const spies = clampInt(data.spies, 1, 3);
+      App.publicState.config.spies = spies;
+      Net.broadcastFullSync();
+      UI.renderAll();
+      return;
+    }
+
+    if(data.t === "START" && App.me.isHost){
+      Game.hostStartRound();
+      return;
+    }
+
+    if(data.t === "END" && App.me.isHost){
+      Game.hostEndRound();
+      return;
+    }
+
+    if(data.t === "LEAVE"){
+      // client pressed "back to lobby"
+      // we do nothing special; they stay in lobby state anyway
+      return;
+    }
+  },
+
+  sendToHost(payload){
+    if(App.me.isHost) return;
+    if(Net.connToHost && Net.connToHost.open){
+      Net.connToHost.send(payload);
+    } else {
+      toast("bad","Нет связи","Хост недоступен.");
+    }
+  },
+
+  // HOST: send SYNC to everyone with per-client privateRole
+  broadcastFullSync(){
+    if(!App.me.isHost) return;
+
+    // increase seq
+    Net.lastSyncSeq += 1;
+    const seq = Net.lastSyncSeq;
+
+    // host also needs its own "private"
+    const hostPrivate = Game.makePrivateFor(App.me.id);
+
+    // render self from host view
+    App.privateRole = hostPrivate;
+
+    // broadcast to peers
+    for(const [peerId, conn] of Net.hostConns.entries()){
+      if(!conn.open) continue;
+
+      const payload = {
+        t: "SYNC",
+        seq,
+        public: sanitizePublicStateForAll(),
+        private: Game.makePrivateFor(peerId)
+      };
+      conn.send(payload);
+    }
+
+    UI.renderAll();
+  }
+};
+
+function trimChat(arr){
+  if(arr.length > CONFIG.MAX_CHAT) return arr.slice(arr.length - CONFIG.MAX_CHAT);
+  return arr;
+}
+
+function clampInt(v, min, max){
+  const n = parseInt(v, 10);
+  if(Number.isNaN(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+// публичный state не содержит ролей/героя
+function sanitizePublicStateForAll(){
+  // В публичный state мы не кладём секреты — они в hostSecret и privateRole
+  return JSON.parse(JSON.stringify(App.publicState));
+}
+
+/* =======================
+   Game Logic
+======================= */
+const Game = {
+  isEveryoneReady(){
+    return App.publicState.players.length >= CONFIG.MIN_PLAYERS &&
+      App.publicState.players.every(p => p.ready === true);
+  },
+
+  hostStartRound(){
+    if(!App.me.isHost) return;
+
+    const players = App.publicState.players;
+    if(players.length < CONFIG.MIN_PLAYERS){
+      toast("warn","Игроков мало","Минимум " + CONFIG.MIN_PLAYERS);
+      return;
+    }
+    if(!players.every(p=>p.ready)){
+      toast("warn","Не все готовы","Пусть все нажмут ГОТОВ.");
+      return;
+    }
+
+    const spiesCount = clampInt(App.publicState.config.spies, 1, 3);
+    const hero = DOTA_HEROES[Math.floor(Math.random()*DOTA_HEROES.length)];
+
+    // anti-streak: не даём быть шпионом 3 раза подряд
+    const streak = App.hostSecret.spyStreak;
+    const candidates = players
+      .slice()
+      .sort(()=>Math.random()-0.5)
+      .filter(p => (streak.get(p.id) || 0) < 3);
+
+    let pool = candidates;
+    if(pool.length < spiesCount){
+      pool = players.slice().sort(()=>Math.random()-0.5);
+    }
+
+    const spyIds = new Set(pool.slice(0, spiesCount).map(p=>p.id));
+
+    // update streaks
+    players.forEach(p=>{
+      const s = streak.get(p.id) || 0;
+      if(spyIds.has(p.id)) streak.set(p.id, s+1);
+      else streak.set(p.id, 0);
+    });
+
+    // store secret
+    App.hostSecret.roundHero = hero;
+    App.hostSecret.spyIds = spyIds;
+
+    // update public phase
+    App.publicState.phase = "game";
+    App.publicState.round.num += 1;
+    App.publicState.round.startedAt = nowTs();
+    App.publicState.gameChat = [sysMsg("Раунд начался. Не палите экран 😉")];
+    App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
+
+    // broadcast
+    Net.broadcastFullSync();
+
+    toast("ok","Раунд начался","Удачи! Шпион пусть импровизирует 😈");
+  },
+
+  hostEndRound(){
+    if(!App.me.isHost) return;
+
+    App.publicState.phase = "lobby";
+    App.publicState.players.forEach(p=>p.ready=false);
+    App.publicState.gameChat = [];
+    App.publicState.lobbyChat.push(sysMsg("Раунд завершён. Можно начинать новый."));
+    App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
+
+    // clear secrets (optional)
+    App.hostSecret.roundHero = null;
+    App.hostSecret.spyIds = new Set();
+
+    Net.broadcastFullSync();
+    toast("warn","Раунд завершён","Все вернулись в лобби.");
+  },
+
+  makePrivateFor(playerId){
+    // если мы не хост — private приходит с SYNC и мы сюда обычно не попадаем
+    if(!App.me.isHost){
+      return App.privateRole || { isSpy:false, hero:null };
+    }
+
+    // HOST calculates private role based on secrets
+    if(App.publicState.phase !== "game"){
+      return { isSpy:false, hero:null };
+    }
+    const isSpy = App.hostSecret.spyIds.has(playerId);
+    const hero = isSpy ? null : App.hostSecret.roundHero;
+    return { isSpy, hero };
+  }
+};
+
+/* =======================
+   UI Rendering
+======================= */
+const UI = {
+  renderAll(){
+    // screen switch
+    switchScreen(App.publicState.phase);
+
+    if(App.publicState.phase === "menu"){
+      // prefill code from url
+      const url = new URL(location.href);
+      const code = url.searchParams.get("code");
+      if(code && code.length===4){
+        $("roomCode").value = code.toUpperCase();
+      }
+      return;
+    }
+
+    if(App.publicState.phase === "lobby"){
+      $("codeDisplay").textContent = App.publicState.roomCode || "....";
+      $("onlineCount").textContent = App.publicState.players.length;
+
+      // host UI
+      $("hostSettings").style.display = App.me.isHost ? "block" : "none";
+      $("btnStart").style.display = App.me.isHost ? "flex" : "none";
+      $("btnReady").style.display = App.me.isHost ? "none" : "flex";
+
+      // select spies
+      if(App.me.isHost){
+        $("spyCount").value = String(clampInt(App.publicState.config.spies,1,3));
+      }
+
+      // ready indicator
+      const allReady = App.publicState.players.every(p=>p.ready);
+      const readyText = allReady ? "Все готовы" : "Ждём игроков…";
+      $("readyText").textContent = readyText;
+      $("readyDot").className = "dot " + (allReady ? "ok" : "warn");
+
+      // start enabled
+      if(App.me.isHost){
+        $("btnStart").disabled = !Game.isEveryoneReady();
+      }
+
+      // my ready button
+      if(!App.me.isHost){
+        const me = App.publicState.players.find(p=>p.id===App.me.id);
+        const isReady = !!me?.ready;
+        $("btnReady").textContent = isReady ? "✕ Я НЕ ГОТОВ" : "✓ Я ГОТОВ";
+        $("btnReady").className = "btn " + (isReady ? "btnGhost" : "btnPrimary");
+      }
+
+      // players list
+      const list = $("playersList");
+      list.innerHTML = "";
+      for(const p of App.publicState.players){
+        const el = document.createElement("div");
+        el.className = "player";
+        const you = p.id === App.me.id ? " (вы)" : "";
+        const host = p.host ? " • хост" : "";
+        el.innerHTML = `
+          <div class="left">
+            <div class="name">${escapeHtml(p.name + you)}</div>
+            <div class="meta">${escapeHtml((p.host ? "ведущий" : "игрок") + host)}</div>
+          </div>
+          <div class="tag ${p.ready ? "ready" : ""}">${p.ready ? "READY" : "WAIT"}</div>
+        `;
+        list.appendChild(el);
+      }
+
+      // lobby chat
+      renderChatInto($("chatLobby"), App.publicState.lobbyChat);
+
+      // clear game chat UI (optional)
+      $("chatGame").innerHTML = "";
+
+      return;
+    }
+
+    if(App.publicState.phase === "game"){
+      $("btnEndHost").style.display = App.me.isHost ? "flex" : "none";
+      $("roundNumSmall").textContent = String(App.publicState.round.num || 0);
+      const started = App.publicState.round.startedAt ? new Date(App.publicState.round.startedAt).toLocaleTimeString() : "—";
+      $("roundInfo").textContent = `#${App.publicState.round.num} • старт ${started}`;
+
+      // game chat
+      renderChatInto($("chatGame"), App.publicState.gameChat);
+
+      // prepare role overlay content (but only show on hold)
+      setRoleCard(App.privateRole);
+
+      return;
+    }
+  }
+};
+
+function renderChatInto(container, arr){
+  container.innerHTML = "";
+  for(const m of (arr || [])){
+    const el = document.createElement("div");
+    el.className = "msg " + (m.sys ? "sys" : "");
+    el.innerHTML = `
+      <div class="who">${escapeHtml(m.name)}</div>
+      <div class="txt">${escapeHtml(m.text)}</div>
+    `;
+    container.appendChild(el);
+  }
+  scrollChatToBottom(container);
+}
+
+function setRoleCard(privateRole){
+  const isSpy = !!privateRole?.isSpy;
+  const hero = privateRole?.hero;
+
+  const card = $("roleCard");
+  const icon = $("roleIcon");
+  const main = $("roleMain");
+  const sub = $("roleSub");
+
+  if(isSpy){
+    card.classList.add("spyTheme");
+    icon.textContent = "😈";
+    main.textContent = "ТЫ ШПИОН";
+    sub.textContent = "Слушай ответы и угадай героя. Главное — не спались.";
+  } else {
+    card.classList.remove("spyTheme");
+    icon.textContent = "🛡️";
+    main.textContent = hero || "…";
+    sub.textContent = "Ты мирный. Отвечай аккуратно и вычисляй шпиона.";
+  }
+}
+
+/* =======================
+   Actions / Events
+======================= */
+$("btnHost").addEventListener("click", ()=>{
+  // validate nick
+  if((($("nick").value||"").trim()).length > 24){
+    toast("warn","Слишком длинный ник","Сделай покороче 🙂");
+    return;
+  }
+  Net.host();
+});
+
+$("btnJoin").addEventListener("click", ()=>{
+  if((($("nick").value||"").trim()).length > 24){
+    toast("warn","Слишком длинный ник","Сделай покороче 🙂");
+    return;
+  }
+  Net.join();
+});
+
+$("btnCopyLink").addEventListener("click", async ()=>{
+  const url = location.origin + location.pathname + "?code=" + App.publicState.roomCode;
+  try{
+    await navigator.clipboard.writeText(url);
+    toast("ok","Ссылка скопирована","Отправь друзьям.");
+  }catch{
+    toast("warn","Не удалось","Скопируй вручную: " + url);
+  }
+});
+
+$("btnCopyCode").addEventListener("click", async ()=>{
+  try{
+    await navigator.clipboard.writeText(App.publicState.roomCode);
+    toast("ok","Код скопирован", App.publicState.roomCode);
+  }catch{
+    toast("warn","Не удалось", "Скопируй вручную: " + App.publicState.roomCode);
+  }
+});
+
+$("spyCount").addEventListener("change", ()=>{
+  if(!App.me.isHost) return;
+  const spies = clampInt($("spyCount").value, 1, 3);
+  App.publicState.config.spies = spies;
+  // broadcast settings
+  Net.broadcastFullSync();
+});
+
+$("btnReady").addEventListener("click", ()=>{
+  if(App.me.isHost) return;
+  Net.sendToHost({ t:"READY" });
+});
+
+$("btnStart").addEventListener("click", ()=>{
+  if(!App.me.isHost) return;
+  // host starts directly
+  Game.hostStartRound();
+});
+
+$("btnEndHost").addEventListener("click", ()=>{
+  if(!App.me.isHost) return;
+  Game.hostEndRound();
+});
+
+$("btnLeaveToLobby").addEventListener("click", ()=>{
+  // "back to lobby" in UI: если ты клиент — просто просим у хоста окончить? нет.
+  // Делаем: показать лобби только если хост завершил. Для игрока — информируем.
+  toast("warn","Нельзя одному выйти","Дождись завершения раунда хостом.");
+});
+
+$("btnVote").addEventListener("click", ()=>{
+  toast("warn","Голосование","Обсудите голосом и выберите шпиона 🙂");
+});
+
+function sendChat(ctx){
+  const inp = ctx==="lobby" ? $("chatLobbyInp") : $("chatGameInp");
+  const text = (inp.value || "").trim();
+  if(!text) return;
+  inp.value = "";
+
+  if(App.me.isHost){
+    const msg = { name: App.me.name, text, ts: nowTs() };
+    if(App.publicState.phase === "lobby"){
+      App.publicState.lobbyChat.push(msg);
+      App.publicState.lobbyChat = trimChat(App.publicState.lobbyChat);
+    } else {
+      App.publicState.gameChat.push(msg);
+      App.publicState.gameChat = trimChat(App.publicState.gameChat);
+    }
+    Net.broadcastFullSync();
+  } else {
+    Net.sendToHost({ t:"CHAT", text });
+  }
+}
+
+$("chatLobbySend").addEventListener("click", ()=>sendChat("lobby"));
+$("chatGameSend").addEventListener("click", ()=>sendChat("game"));
+
+$("chatLobbyInp").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") sendChat("lobby");
+});
+$("chatGameInp").addEventListener("keydown", (e)=>{
+  if(e.key === "Enter") sendChat("game");
+});
+
+// role reveal (hold)
+const overlay = $("overlay");
+const revealBtn = $("revealBtn");
+
+function showOverlay(on){
+  overlay.style.display = on ? "flex" : "none";
+  revealBtn.style.opacity = on ? "0.22" : "1";
+}
+
+revealBtn.addEventListener("mousedown", ()=>showOverlay(true));
+revealBtn.addEventListener("mouseup", ()=>showOverlay(false));
+revealBtn.addEventListener("mouseleave", ()=>showOverlay(false));
+revealBtn.addEventListener("touchstart", (e)=>{ e.preventDefault(); showOverlay(true); }, { passive:false });
+revealBtn.addEventListener("touchend", ()=>showOverlay(false));
+revealBtn.addEventListener("touchcancel", ()=>showOverlay(false));
+overlay.addEventListener("click", ()=>showOverlay(false));
+
+/* =======================
+   Easter Egg
+======================= */
+function triggerEasterEgg(){
+  const el = $("secret-modal");
+  el.style.opacity = 1;
+  confetti({ particleCount: 140, spread: 70, origin: { y: 0.65 } });
+  setTimeout(()=>{ el.style.opacity = 0; }, 2200);
+}
+
+/* =======================
+   Startup (URL code fill)
+======================= */
+(function init(){
+  // prefill from url
+  const url = new URL(location.href);
+  const code = url.searchParams.get("code");
+  if(code && code.length === 4){
+    $("roomCode").value = code.toUpperCase();
+  }
+  setStatus("Готов к игре","warn");
+  UI.renderAll();
+})();
+</script>
 </body>
 </html>
